@@ -2,11 +2,14 @@ package yunrry.flik.batch.job.reader;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.NonTransientResourceException;
-import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
+import yunrry.flik.batch.exception.RateLimitExceededException;
 import yunrry.flik.batch.service.ApiService;
 import yunrry.flik.batch.service.RateLimitService;
 
@@ -25,12 +28,30 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
     private AtomicInteger currentIndex = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(1);
     private boolean isDetailMode = false;
+    private StepExecution stepExecution;
 
-    @Override
+
+    @BeforeStep
+    public void beforeStep(StepExecution stepExecution) {
+        this.stepExecution = stepExecution;
+
+        // 이전 실행에서 중단된 페이지 복구
+        JobExecution jobExecution = stepExecution.getJobExecution();
+        ExecutionContext context = jobExecution.getExecutionContext();
+
+        if (context.containsKey("lastPage")) {
+            int lastPage = context.getInt("lastPage");
+            currentPage.set(lastPage + 1);
+            log.info("Resuming from page: {}", currentPage.get());
+        }
+    }
+
     public TourismRawData read() throws Exception {
-
-        if (!rateLimitService.canMakeRequest()) {
-            log.warn("API rate limit exceeded for today");
+        try {
+            rateLimitService.checkRateLimit();
+        } catch (RateLimitExceededException e) {
+            log.warn("Rate limit exceeded, stopping batch: {}", e.getMessage());
+            // 배치 정상 종료 처리
             return null;
         }
 
@@ -39,7 +60,7 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
         }
 
         if (currentBatch == null || currentBatch.isEmpty()) {
-            return null; // End of data
+            return null;
         }
 
         return currentBatch.get(currentIndex.getAndIncrement());
@@ -47,22 +68,26 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
 
     private void fetchNextBatch() {
         try {
-            if (isDetailMode) {
-                currentBatch = apiService.fetchUnprocessedDataForDetail();
-            } else {
-                currentBatch = apiService.fetchAreaBasedList(currentPage.get());
+            currentBatch = apiService.fetchAreaBasedList(currentPage.get());
+            currentIndex.set(0);
+
+            if (currentBatch != null && !currentBatch.isEmpty()) {
+                // 성공적으로 페이지 처리 시 상태 저장
+                savePageState();
                 currentPage.incrementAndGet();
             }
-            currentIndex.set(0);
         } catch (Exception e) {
-            log.error("Failed to fetch data from API", e);
+            log.error("Failed to fetch data from API at page: {}", currentPage.get(), e);
             currentBatch = null;
         }
     }
 
-    public ItemReader<TourismRawData> createDetailReader() {
-        TourismApiItemReader detailReader = new TourismApiItemReader(apiService, rateLimitService);
-        detailReader.isDetailMode = true;
-        return detailReader;
+    private void savePageState() {
+        if (stepExecution != null) {
+            JobExecution jobExecution = stepExecution.getJobExecution();
+            ExecutionContext context = jobExecution.getExecutionContext();
+            context.putInt("lastPage", currentPage.get());
+            log.debug("Saved page state: {}", currentPage.get());
+        }
     }
 }
