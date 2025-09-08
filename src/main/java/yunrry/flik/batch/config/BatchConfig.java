@@ -14,6 +14,7 @@ import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
 import yunrry.flik.batch.job.writer.TourismDataWriter;
+import yunrry.flik.batch.listener.BatchJobListener;
 
 @Configuration
 @EnableBatchProcessing
@@ -25,10 +26,12 @@ public class BatchConfig {
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
     private final TourismDataWriter tourismDataWriter;
+    private final BatchJobListener batchJobListener;
 
     @Bean
     public Job tourismDataJob() {
         return new JobBuilder("tourismDataJob", jobRepository)
+                .listener(batchJobListener)
                 .start(areaBasedListStep())
                 .next(detailIntroStep())
                 .build();

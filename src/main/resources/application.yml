@@ -96,4 +96,8 @@ tourism-api:
   retry-attempts: 3
 
 
+discord:
+  webhook:
+    url: ${DISCORD_WEBHOOK}
+
 

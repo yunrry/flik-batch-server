@@ -2,6 +2,7 @@ package yunrry.flik.batch.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,9 @@ import java.time.LocalDate;
 public class RateLimitService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private static final int DAILY_LIMIT = 1000;
+
+    @Value("${rate-limit.tourism-api.daily-limit:1000}")
+    private int DAILY_LIMIT;
 
     public boolean canMakeRequest() {
         String key = "tourism-api:" + LocalDate.now();
