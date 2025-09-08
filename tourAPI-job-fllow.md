@@ -81,6 +81,7 @@ if (redisTemplate.opsForValue().increment(key) > 1000) {
 }
 ```
 
+
 ## 모니터링 포인트
 
 - API 호출 횟수 추적
