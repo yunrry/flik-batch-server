@@ -53,6 +53,9 @@ management:
       enabled: true
     diskspace:
       enabled: true
+  info:
+    env:
+      enabled: true
 
 # Logging configuration
 logging:
