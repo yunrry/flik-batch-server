@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+.env
+
+tourAPI-job-fllow.md
