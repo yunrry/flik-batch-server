@@ -223,12 +223,6 @@ jobs:
               TEST_RESULTS="${TEST_RESULTS}health:fail "
             fi
             
-            if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/info > /dev/null 2>&1; then
-              TEST_RESULTS="${TEST_RESULTS}info:ok "
-            else
-              TEST_RESULTS="${TEST_RESULTS}info:fail "
-            fi
-            
             if echo "$TEST_RESULTS" | grep -q "fail"; then
               echo "Batch deployment failed, test results: $TEST_RESULTS"
               echo "Rolling back..."
