@@ -1,3 +1,5 @@
+package yunrry.flik.batch.job.reader;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemReader;
@@ -5,6 +7,8 @@ import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
+import yunrry.flik.batch.service.ApiService;
+import yunrry.flik.batch.service.RateLimitService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +27,7 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
     private boolean isDetailMode = false;
 
     @Override
-    public TourismRawData read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+    public TourismRawData read() throws Exception {
 
         if (!rateLimitService.canMakeRequest()) {
             log.warn("API rate limit exceeded for today");
