@@ -27,9 +27,6 @@ services:
     networks:
       - goormthon-java_dormung-network
     restart: unless-stopped
-    depends_on:
-      - mysql
-      - redis
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
       interval: 30s
@@ -64,9 +61,6 @@ services:
     networks:
       - goormthon-java_dormung-network
     restart: unless-stopped
-    depends_on:
-      - mysql
-      - redis
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
       interval: 30s
