@@ -19,15 +19,23 @@ public class TourismDataWriter implements ItemWriter<TourismRawData> {
 
     @Override
     public void write(Chunk<? extends TourismRawData> chunk) throws Exception {
-        try {
-            for (TourismRawData item : chunk) {
+        int successCount = 0;
+        int failCount = 0;
+
+        for (TourismRawData item : chunk) {
+            try {
                 tourismDataRepository.saveAreaBasedData(item);
+                successCount++;
+                log.debug("Saved item: contentId={}, title={}", item.getContentId(), item.getTitle());
+            } catch (Exception e) {
+                failCount++;
+                log.error("Failed to save item: contentId={}, error={}", item.getContentId(), e.getMessage());
+                throw e;
             }
-            log.info("Saved {} tourism data items", chunk.size());
-        } catch (Exception e) {
-            log.error("Error writing tourism data", e);
-            throw e;
         }
+
+        log.info("Batch write completed - Success: {}, Failed: {}, Total: {}",
+                successCount, failCount, chunk.size());
     }
 
     public ItemWriter<TourismRawData> createDetailWriter() {

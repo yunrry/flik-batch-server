@@ -3,6 +3,7 @@ package yunrry.flik.batch.domain;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -46,4 +47,10 @@ public class TourismRawData {
 
     // 도메인별 특화 필드들 (Map으로 관리)
     private Map<String, String> domainFields;
+
+    // Google Place 정보
+    private String googlePlaceId;
+    private Double googleRating;
+    private Integer googleReviewCount;
+    private List<String> googleReviews;
 }

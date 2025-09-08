@@ -66,6 +66,20 @@ public class NotificationService {
         );
     }
 
+    public void sendRateLimitAlert(String jobName, int usedCount) {
+        String message = String.format(
+                "⚠️ **API 제한 도달**\n" +
+                        "**작업명**: %s\n" +
+                        "**사용량**: %d/1000건\n" +
+                        "**상태**: 내일 자동 재시작 예정\n" +
+                        "**시간**: %s",
+                jobName, usedCount,
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        );
+
+        sendDiscordMessage(message);
+    }
+
     private void sendDiscordMessage(String message) {
         try {
             Map<String, String> payload = Map.of("content", message);

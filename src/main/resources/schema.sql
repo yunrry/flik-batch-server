@@ -1,6 +1,6 @@
 -- flik-batch-server 테이블 초기화 SQL
 -- 파일 위치: src/main/resources/schema.sql
-
+USE flik_batch_db;
 -- 1. 관광지 데이터 테이블 (content_type_id: 12)
 CREATE TABLE IF NOT EXISTS fetched_tourist_attractions (
                                                            id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -298,6 +298,80 @@ CREATE TABLE IF NOT EXISTS fetched_restaurants (
                                                    INDEX idx_title (title(100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+
+-- flik_db.fetched_accommodations definition
+
+CREATE TABLE IF NOT EXISTS `fetched_accommodations` (
+                                          `id` bigint NOT NULL AUTO_INCREMENT,
+                                          `content_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+                                          `content_type_id` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+                                          `content_type_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+                                          `title` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+                                          `addr1` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `addr2` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `first_image` text COLLATE utf8mb4_unicode_ci,
+                                          `first_image2` text COLLATE utf8mb4_unicode_ci,
+                                          `map_x` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `map_y` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `area_code` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `sigungu_code` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `cat1` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `cat2` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `cat3` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `created_time` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `modified_time` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `tel` text COLLATE utf8mb4_unicode_ci,
+                                          `zipcode` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                          `overview` text COLLATE utf8mb4_unicode_ci,
+                                          `source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'http://apis.data.go.kr/B551011/KorService2',
+                                          `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+                                          `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                          `usetime` text COLLATE utf8mb4_unicode_ci,
+                                          `restdate` text COLLATE utf8mb4_unicode_ci,
+                                          `parking` text COLLATE utf8mb4_unicode_ci,
+                                          `parkingfee` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `infocenter` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `chkbabycarriage` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `chkpet` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `chkcreditcard` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `roomcount` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `roomtype` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `refundregulation` text COLLATE utf8mb4_unicode_ci,
+                                          `checkintime` text COLLATE utf8mb4_unicode_ci,
+                                          `checkouttime` text COLLATE utf8mb4_unicode_ci,
+                                          `chkcooking` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `seminar` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `sports` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `sauna` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `beauty` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `beverage` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `karaoke` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `barbecue` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `campfire` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `bicycle` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `fitness` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `publicpc` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `publicbath` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `subfacility` text COLLATE utf8mb4_unicode_ci,
+                                          `foodplace` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `reservationurl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `pickup` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `reservationlodging` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `scalelodging` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          `accomcountlodging` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
+                                          PRIMARY KEY (`id`),
+                                          UNIQUE KEY `content_id` (`content_id`),
+                                          KEY `idx_content_type` (`content_type_id`),
+                                          KEY `idx_area` (`area_code`,`sigungu_code`),
+                                          KEY `idx_title` (`title`(100))
+) ENGINE=InnoDB AUTO_INCREMENT=126 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+
+
+
 -- 7. 배치 작업 실행 로그 테이블
 CREATE TABLE IF NOT EXISTS batch_execution_log (
                                                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -332,3 +406,43 @@ CREATE TABLE IF NOT EXISTS api_rate_limit_log (
                                                   UNIQUE KEY uk_api_date (api_name, call_date),
                                                   INDEX idx_call_date (call_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='API 호출 제한 로그';
+
+
+
+
+
+
+
+
+
+
+ALTER TABLE fetched_tourist_attractions ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_tourist_attractions ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_tourist_attractions ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_tourist_attractions ADD COLUMN google_reviews TEXT;
+
+ALTER TABLE fetched_restaurants ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_restaurants ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_restaurants ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_restaurants ADD COLUMN google_reviews TEXT;
+
+ALTER TABLE fetched_sports_recreation ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_sports_recreation ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_sports_recreation ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_sports_recreation ADD COLUMN google_reviews TEXT;
+
+
+ALTER TABLE fetched_cultural_facilities ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_cultural_facilities ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_cultural_facilities ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_cultural_facilities ADD COLUMN google_reviews TEXT;
+
+ALTER TABLE fetched_shopping ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_shopping ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_shopping ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_shopping ADD COLUMN google_reviews TEXT;
+
+ALTER TABLE fetched_accommodations ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE fetched_accommodations ADD COLUMN google_rating DECIMAL(2,1);
+ALTER TABLE fetched_accommodations ADD COLUMN google_review_count INT;
+ALTER TABLE fetched_accommodations ADD COLUMN google_reviews TEXT;

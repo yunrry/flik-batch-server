@@ -42,19 +42,21 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     @Override
     public List<TourismRawData> findUnprocessedForDetail() {
         String sql = """
-            (SELECT content_id, content_type_id, '12' as table_type FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = '')
-            UNION ALL
-            (SELECT content_id, content_type_id, '14' as table_type FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = '')
-            UNION ALL
-            (SELECT content_id, content_type_id, '15' as table_type FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = '')
-            UNION ALL
-            (SELECT content_id, content_type_id, '28' as table_type FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = '')
-            UNION ALL
-            (SELECT content_id, content_type_id, '38' as table_type FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
-            UNION ALL
-            (SELECT content_id, content_type_id, '39' as table_type FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '')
-            LIMIT 100
-            """;
+        (SELECT content_id, content_type_id, '12' as table_type FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '14' as table_type FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '15' as table_type FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '28' as table_type FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '32' as table_type FROM fetched_accommodations WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '38' as table_type FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, '39' as table_type FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '')
+        LIMIT 100
+        """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 TourismRawData.builder()
@@ -70,7 +72,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         String[] tables = {
                 "fetched_tourist_attractions", "fetched_cultural_facilities",
                 "fetched_festivals_events", "fetched_sports_recreation",
-                "fetched_shopping", "fetched_restaurants"
+                "fetched_accommodations", "fetched_shopping", "fetched_restaurants"
         };
 
         for (String table : tables) {
@@ -87,6 +89,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
             case "14" -> "fetched_cultural_facilities";
             case "15" -> "fetched_festivals_events";
             case "28" -> "fetched_sports_recreation";
+            case "32" -> "fetched_accommodations";  // 추가
             case "38" -> "fetched_shopping";
             case "39" -> "fetched_restaurants";
             default -> throw new IllegalArgumentException("Unknown content type: " + contentTypeId);
@@ -136,6 +139,11 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
                     "spendtimefestival", "festivalgrade", "progresstype", "festivaltype");
             case "28" -> List.of("openperiod", "reservation", "scaleleports",
                     "accomcountleports", "usefeeleports", "expagerangeleports");
+            case "32" -> List.of("roomcount", "roomtype", "refundregulation", "checkintime", "checkouttime",
+                    "chkcooking", "seminar", "sports", "sauna", "beauty", "beverage", "karaoke",
+                    "barbecue", "campfire", "bicycle", "fitness", "publicpc", "publicbath",
+                    "subfacility", "foodplace", "reservationurl", "pickup", "reservationlodging",
+                    "scalelodging", "accomcountlodging");
             case "38" -> List.of("saleitem", "saleitemcost", "fairday", "opendateshopping",
                     "shopguide", "culturecenter", "restroom", "scaleshopping");
             case "39" -> List.of("seat", "kidsfacility", "firstmenu", "treatmenu", "smoking",

@@ -24,7 +24,7 @@ public class TourismDataProcessor implements ItemProcessor<TourismRawData, Touri
         try {
             // 기본 데이터 검증
             if (!isValidData(item)) {
-                log.warn("Invalid data for contentId: {}", item.getContentId());
+                log.warn("Invalid data skipped: contentId={}, title={}", item.getContentId(), item.getTitle());
                 return null;
             }
 
@@ -37,9 +37,10 @@ public class TourismDataProcessor implements ItemProcessor<TourismRawData, Touri
             // 소스 정보 설정
             item.setSource("http://apis.data.go.kr/B551011/KorService2");
 
+            log.debug("Processed item: contentId={}, type={}", item.getContentId(), item.getContentTypeName());
             return item;
         } catch (Exception e) {
-            log.error("Error processing item: {}", item.getContentId(), e);
+            log.error("Processing failed: contentId={}, error={}", item.getContentId(), e.getMessage());
             return null;
         }
     }

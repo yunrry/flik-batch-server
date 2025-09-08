@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
+import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
 import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
@@ -23,6 +24,7 @@ public class BatchConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
+    private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
     private final TourismDataWriter tourismDataWriter;
@@ -51,7 +53,7 @@ public class BatchConfig {
     public Step detailIntroStep() {
         return new StepBuilder("detailIntroStep", jobRepository)
                 .<TourismRawData, TourismRawData>chunk(10, transactionManager)
-                .reader(tourismApiItemReader.createDetailReader())
+                .reader(detailItemReader) // 변경
                 .processor(tourismDataProcessor.createDetailProcessor())
                 .writer(tourismDataWriter.createDetailWriter())
                 .build();
