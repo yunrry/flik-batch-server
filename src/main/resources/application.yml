@@ -1,12 +1,13 @@
 spring:
   application:
     name: flik-batch
-
+  main:
+    web-application-type: servlet
   batch:
     jdbc:
       initialize-schema: always
     job:
-      enabled: false # 수동 실행
+      enabled: true # 자동 실행
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/flik_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul}
