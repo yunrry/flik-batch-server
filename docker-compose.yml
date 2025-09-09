@@ -22,6 +22,7 @@ services:
       - DEPLOYMENT_ENV=blue
       - TOURISM_API_SERVICE_KEY=${TOURISM_API_SERVICE_KEY}
       - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
     ports:
       - "8085:8081"
     networks:
@@ -56,6 +57,7 @@ services:
       - DEPLOYMENT_ENV=green
       - TOURISM_API_SERVICE_KEY=${TOURISM_API_SERVICE_KEY}
       - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
     ports:
       - "8086:8081"
     networks:
