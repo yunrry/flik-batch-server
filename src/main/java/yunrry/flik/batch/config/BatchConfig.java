@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import yunrry.flik.batch.domain.TourismRawData;
+import yunrry.flik.batch.job.GooglePlacesEnrichmentJob;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
@@ -18,29 +19,35 @@ import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
 
 @Configuration
-@EnableBatchProcessing
 @RequiredArgsConstructor
 public class BatchConfig {
 
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
+//    private final JobRepository jobRepository;
+//    private final PlatformTransactionManager transactionManager;
     private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
     private final TourismDataWriter tourismDataWriter;
     private final BatchJobListener batchJobListener;
+    private final GooglePlacesEnrichmentJob googlePlacesEnrichmentJob;
 
     @Bean
-    public Job tourismDataJob() {
+    public Job tourismDataJob(JobRepository jobRepository) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(areaBasedListStep())
-                .next(detailIntroStep())
+                .start(areaBasedListStep(jobRepository, null))
+                .next(detailIntroStep(jobRepository, null))
+                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
+                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
+                .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
+                .next(googlePlacesEnrichmentJob.enrichCulturalFacilitiesStep())
+                .next(googlePlacesEnrichmentJob.enrichLeisureSportsStep())
+                .next(googlePlacesEnrichmentJob.enrichShoppingStep())
                 .build();
     }
 
     @Bean
-    public Step areaBasedListStep() {
+    public Step areaBasedListStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("areaBasedListStep", jobRepository)
                 .<TourismRawData, TourismRawData>chunk(50, transactionManager)
                 .reader(tourismApiItemReader)
@@ -50,10 +57,10 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step detailIntroStep() {
+    public Step detailIntroStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("detailIntroStep", jobRepository)
                 .<TourismRawData, TourismRawData>chunk(10, transactionManager)
-                .reader(detailItemReader) // 변경
+                .reader(detailItemReader)
                 .processor(tourismDataProcessor.createDetailProcessor())
                 .writer(tourismDataWriter.createDetailWriter())
                 .build();

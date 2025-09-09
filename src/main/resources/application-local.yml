@@ -1,7 +1,8 @@
 spring:
   application:
     name: flik-batch
-
+  main:
+    web-application-type: servlet
   batch:
     jdbc:
       initialize-schema: always
@@ -57,13 +58,13 @@ management:
     env:
       enabled: true
 
-# Logging configuration
+
 logging:
   level:
-    root: INFO
-    yunrry.flik: DEBUG
-    org.springframework.security: INFO
-    org.springframework.web: INFO
+    org.springframework.web: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.context: DEBUG
+    yunrry.flik.batch: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -96,4 +97,11 @@ tourism-api:
   retry-attempts: 3
 
 
+discord:
+  webhook:
+    url: ${DISCORD_WEBHOOK}
 
+
+google:
+  places:
+    api-key: ${GOOGLE_PLACES_API_KEY}

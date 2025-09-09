@@ -2,8 +2,9 @@ package yunrry.flik.batch.job;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import yunrry.flik.batch.service.NotificationService;
 import yunrry.flik.batch.domain.PlaceReview;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.service.GooglePlacesService;
@@ -22,6 +24,9 @@ import yunrry.flik.batch.service.GooglePlacesService;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Configuration
@@ -33,14 +38,129 @@ public class GooglePlacesEnrichmentJob {
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
     private final GooglePlacesService googlePlacesService;
+    private final NotificationService discordNotificationService;
+
+    private static final Logger nullRatingLogger = LoggerFactory.getLogger("NULL_RATING_LOGGER");
+    private static final Logger noPlaceFoundLogger = LoggerFactory.getLogger("NO_PLACE_FOUND_LOGGER");
+
 
     @Bean
     public Job googlePlacesJob() {
         return new JobBuilder("googlePlacesJob", jobRepository)
+                .listener(googlePlacesJobListener())
                 .start(enrichTouristAttractionsStep())
                 .next(enrichRestaurantsStep())
                 .next(enrichAccommodationsStep())
+                .next(enrichCulturalFacilitiesStep())
+                .next(enrichLeisureSportsStep())
+                .next(enrichShoppingStep())
                 .build();
+    }
+
+
+    @Bean
+    public Step enrichCulturalFacilitiesStep() {
+        return new StepBuilder("enrichCulturalFacilitiesStep", jobRepository)
+                .<TourismRawData, TourismRawData>chunk(10, transactionManager)
+                .reader(culturalFacilitiesReader())
+                .processor(placesProcessor())
+                .writer(culturalFacilitiesWriter())
+                .build();
+    }
+
+    @Bean
+    public Step enrichLeisureSportsStep() {
+        return new StepBuilder("enrichLeisureSportsStep", jobRepository)
+                .<TourismRawData, TourismRawData>chunk(10, transactionManager)
+                .reader(leisureSportsReader())
+                .processor(placesProcessor())
+                .writer(leisureSportsWriter())
+                .build();
+    }
+
+    @Bean
+    public Step enrichShoppingStep() {
+        return new StepBuilder("enrichShoppingStep", jobRepository)
+                .<TourismRawData, TourismRawData>chunk(10, transactionManager)
+                .reader(shoppingReader())
+                .processor(placesProcessor())
+                .writer(shoppingWriter())
+                .build();
+    }
+
+    @Bean
+    public ItemReader<TourismRawData> culturalFacilitiesReader() {
+        return new JdbcCursorItemReaderBuilder<TourismRawData>()
+                .name("culturalFacilitiesReader")
+                .dataSource(dataSource)
+                .sql("SELECT content_id, title, addr1 FROM fetched_cultural_facilities WHERE google_rating IS NULL")
+                .rowMapper(this::mapRow)
+                .build();
+    }
+
+    @Bean
+    public ItemReader<TourismRawData> leisureSportsReader() {
+        return new JdbcCursorItemReaderBuilder<TourismRawData>()
+                .name("leisureSportsReader")
+                .dataSource(dataSource)
+                .sql("SELECT content_id, title, addr1 FROM fetched_leisure_sports WHERE google_rating IS NULL")
+                .rowMapper(this::mapRow)
+                .build();
+    }
+
+    @Bean
+    public ItemReader<TourismRawData> shoppingReader() {
+        return new JdbcCursorItemReaderBuilder<TourismRawData>()
+                .name("shoppingReader")
+                .dataSource(dataSource)
+                .sql("SELECT content_id, title, addr1 FROM fetched_shopping WHERE google_rating IS NULL")
+                .rowMapper(this::mapRow)
+                .build();
+    }
+
+    @Bean
+    public ItemWriter<TourismRawData> culturalFacilitiesWriter() {
+        return items -> {
+            for (TourismRawData item : items) {
+                updateGoogleData("fetched_cultural_facilities", item);
+            }
+        };
+    }
+
+    @Bean
+    public ItemWriter<TourismRawData> leisureSportsWriter() {
+        return items -> {
+            for (TourismRawData item : items) {
+                updateGoogleData("fetched_leisure_sports", item);
+            }
+        };
+    }
+
+    @Bean
+    public ItemWriter<TourismRawData> shoppingWriter() {
+        return items -> {
+            for (TourismRawData item : items) {
+                updateGoogleData("fetched_shopping", item);
+            }
+        };
+    }
+
+    @Bean
+    public JobExecutionListener googlePlacesJobListener() {
+        return new JobExecutionListener() {
+            @Override
+            public void beforeJob(JobExecution jobExecution) {
+                log.info("Google Places enrichment job started: {}", jobExecution.getId());
+                discordNotificationService.sendGooglePlacesJobStartAlert(jobExecution);
+            }
+
+            @Override
+            public void afterJob(JobExecution jobExecution) {
+                discordNotificationService.sendGooglePlacesJobCompletionAlert(jobExecution);
+                log.info("Google Places enrichment job finished: {} with status: {}",
+                        jobExecution.getId(), jobExecution.getStatus());
+            }
+        };
     }
 
     @Bean
@@ -108,15 +228,41 @@ public class GooglePlacesEnrichmentJob {
         return item -> {
             try {
                 PlaceReview placeData = googlePlacesService.getPlaceData(item.getTitle(), item.getAddr1());
+
                 if (placeData != null) {
-                    item.setGoogleRating(placeData.getRating());
-                    item.setGoogleReviewCount(placeData.getReviewCount());
-                    item.setGoogleReviews(placeData.getReviews());
-                    item.setGooglePlaceId(placeData.getPlaceId());
+                    if (placeData.getRating() != null) {
+                        // 정상 처리
+                        item.setGoogleRating(placeData.getRating());
+                        item.setGoogleReviewCount(placeData.getReviewCount());
+                        item.setGoogleReviews(placeData.getReviews());
+                        item.setGooglePlaceId(placeData.getPlaceId());
+
+                        log.debug("Success: {} | Rating: {}", item.getTitle(), placeData.getRating());
+                    } else {
+                        // rating이 null인 경우 별도 로거로 저장
+                        nullRatingLogger.info("ContentId={}, Title='{}', Address='{}', PlaceId={}, ReviewCount={}",
+                                item.getContentId(),
+                                item.getTitle().replace(",", "\\,"), // CSV 안전을 위해 쉼표 이스케이프
+                                item.getAddr1().replace(",", "\\,"),
+                                placeData.getPlaceId(),
+                                placeData.getReviewCount());
+
+                        item.setGooglePlaceId(placeData.getPlaceId());
+                        item.setGoogleReviewCount(placeData.getReviewCount());
+                        item.setGoogleReviews(placeData.getReviews());
+                    }
+                } else {
+                    // 장소를 찾지 못한 경우 별도 로거로 저장
+                    noPlaceFoundLogger.info("ContentId={}, Title='{}', Address='{}'",
+                            item.getContentId(),
+                            item.getTitle().replace(",", "\\,"),
+                            item.getAddr1().replace(",", "\\,"));
                 }
+
                 return item;
+
             } catch (Exception e) {
-                log.error("Error processing Google Places data for: {}", item.getContentId(), e);
+                log.error("API Error for {}: {}", item.getContentId(), e.getMessage());
                 return item;
             }
         };
@@ -207,4 +353,6 @@ public class GooglePlacesEnrichmentJob {
             }
         };
     }
+
+
 }

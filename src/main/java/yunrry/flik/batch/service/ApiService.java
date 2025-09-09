@@ -113,18 +113,30 @@ public class ApiService {
 
             if (itemArray.isArray()) {
                 for (JsonNode item : itemArray) {
+                    // 여행코스(25) 필터링
+                    String contentTypeId = getTextValue(item, "contenttypeid");
+                    if ("25".equals(contentTypeId)) {
+                        log.debug("Skipping travel course data: contentId={}", getTextValue(item, "contentid"));
+                        continue;
+                    }
+
                     TourismRawData data = parseAreaBasedItem(item);
                     if (data != null) {
                         results.add(data);
                     }
                 }
             } else {
-                TourismRawData data = parseAreaBasedItem(itemArray);
-                if (data != null) {
-                    results.add(data);
+                // 단일 아이템인 경우도 체크
+                String contentTypeId = getTextValue(itemArray, "contenttypeid");
+                if (!"25".equals(contentTypeId)) {
+                    TourismRawData data = parseAreaBasedItem(itemArray);
+                    if (data != null) {
+                        results.add(data);
+                    }
                 }
             }
 
+            log.info("Parsed {} items (filtered out travel courses)", results.size());
             return results;
         } catch (Exception e) {
             log.error("Error parsing area based response", e);

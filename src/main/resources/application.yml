@@ -64,9 +64,17 @@ logging:
     yunrry.flik: DEBUG
     org.springframework.security: INFO
     org.springframework.web: INFO
+    yunrry.flik.batch.job.GooglePlacesEnrichmentJob: DEBUG
+    NULL_RATING_LOGGER: INFO
+    NO_PLACE_FOUND_LOGGER: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
 
 
 jwt:
