@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import yunrry.flik.batch.domain.TourismRawData;
+import yunrry.flik.batch.job.GooglePlacesEnrichmentJob;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
@@ -28,6 +29,7 @@ public class BatchConfig {
     private final TourismDataProcessor tourismDataProcessor;
     private final TourismDataWriter tourismDataWriter;
     private final BatchJobListener batchJobListener;
+    private final GooglePlacesEnrichmentJob googlePlacesEnrichmentJob;
 
     @Bean
     public Job tourismDataJob(JobRepository jobRepository) {
@@ -35,6 +37,12 @@ public class BatchConfig {
                 .listener(batchJobListener)
                 .start(areaBasedListStep(jobRepository, null))
                 .next(detailIntroStep(jobRepository, null))
+                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
+                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
+                .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
+                .next(googlePlacesEnrichmentJob.enrichCulturalFacilitiesStep())
+                .next(googlePlacesEnrichmentJob.enrichLeisureSportsStep())
+                .next(googlePlacesEnrichmentJob.enrichShoppingStep())
                 .build();
     }
 

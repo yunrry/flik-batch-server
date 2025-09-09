@@ -8,7 +8,7 @@ import java.util.List;
 @Builder
 public class PlaceReview {
     private String placeId;
-    private double rating;
+    private Double rating;
     private int reviewCount;
     private List<String> reviews;
 

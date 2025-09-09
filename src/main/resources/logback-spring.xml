@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 기본 콘솔 로그 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Rating이 null인 데이터 전용 파일 -->
+    <appender name="NULL_RATING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/google-places-null-rating.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/google-places-null-rating.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 장소를 찾지 못한 데이터 전용 파일 -->
+    <appender name="NO_PLACE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/google-places-not-found.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/google-places-not-found.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 별도 로거 설정 -->
+    <logger name="NULL_RATING_LOGGER" level="INFO" additivity="false">
+        <appender-ref ref="NULL_RATING_FILE"/>
+    </logger>
+
+    <logger name="NO_PLACE_FOUND_LOGGER" level="INFO" additivity="false">
+        <appender-ref ref="NO_PLACE_FILE"/>
+    </logger>
+
+    <!-- 루트 로거 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
