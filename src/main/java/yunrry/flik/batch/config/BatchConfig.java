@@ -18,12 +18,11 @@ import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
 
 @Configuration
-@EnableBatchProcessing
 @RequiredArgsConstructor
 public class BatchConfig {
 
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
+//    private final JobRepository jobRepository;
+//    private final PlatformTransactionManager transactionManager;
     private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
@@ -31,16 +30,16 @@ public class BatchConfig {
     private final BatchJobListener batchJobListener;
 
     @Bean
-    public Job tourismDataJob() {
+    public Job tourismDataJob(JobRepository jobRepository) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(areaBasedListStep())
-                .next(detailIntroStep())
+                .start(areaBasedListStep(jobRepository, null))
+                .next(detailIntroStep(jobRepository, null))
                 .build();
     }
 
     @Bean
-    public Step areaBasedListStep() {
+    public Step areaBasedListStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("areaBasedListStep", jobRepository)
                 .<TourismRawData, TourismRawData>chunk(50, transactionManager)
                 .reader(tourismApiItemReader)
@@ -50,10 +49,10 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step detailIntroStep() {
+    public Step detailIntroStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("detailIntroStep", jobRepository)
                 .<TourismRawData, TourismRawData>chunk(10, transactionManager)
-                .reader(detailItemReader) // 변경
+                .reader(detailItemReader)
                 .processor(tourismDataProcessor.createDetailProcessor())
                 .writer(tourismDataWriter.createDetailWriter())
                 .build();

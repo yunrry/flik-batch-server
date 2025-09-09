@@ -7,6 +7,7 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import yunrry.flik.batch.service.RateLimitService;
 
@@ -24,6 +25,12 @@ public class BatchController {
     private final Job tourismDataJob;
     private final JobRepository jobRepository;
     private final RateLimitService rateLimitService;
+
+
+    @GetMapping("/test")
+    public String test() {
+        return "Controller working";
+    }
 
     @PostMapping("/tourism/run")
     public ResponseEntity<Map<String, Object>> runTourismBatch() {
