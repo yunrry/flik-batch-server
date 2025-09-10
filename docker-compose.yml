@@ -6,6 +6,8 @@ services:
       - blue
     image: flik-batch:latest
     container_name: batch-blue
+    volumes:
+      - ./logs:/app/logs
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
@@ -20,6 +22,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
       - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
+      - LOGGING_FILE_PATH=/app/logs
     ports:
       - "8085:8081"
     networks:
@@ -38,6 +41,8 @@ services:
       - green
     image: flik-batch:latest
     container_name: batch-green
+    volumes:
+      - ./logs:/app/logs
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
@@ -52,6 +57,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
       - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
+      - LOGGING_FILE_PATH=/app/logs
     ports:
       - "8086:8081"
     networks:
