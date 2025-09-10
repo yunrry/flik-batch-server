@@ -141,6 +141,14 @@ jobs:
           
           cd /home/yoon/flik-batch-server
           
+          # 로그 디렉토리 생성 및 권한 설정
+          echo "Creating logs directory with proper permissions..."
+          mkdir -p logs
+          
+          # Docker 컨테이너의 batch 사용자(UID 1001)에게 권한 부여
+          sudo chown -R 1001:1001 logs
+          chmod -R 755 logs
+          
           # .env 파일 생성
           echo "Creating .env file..."
           cat > .env << ENVEOF
