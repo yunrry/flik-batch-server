@@ -92,6 +92,13 @@ jobs:
           flavor: |
             suffix=-arm64
 
+      - name: Clear all caches before build
+        run: |
+          echo "Clearing all build caches..."
+          rm -rf ~/.gradle/caches || true
+          rm -rf ~/.gradle/wrapper || true
+          docker system prune -af --volumes || true
+
       - name: Build and push Flik Batch Server image
         uses: docker/build-push-action@v5
         with:
@@ -100,11 +107,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          no-cache: true  # Docker 캐시 완전 비활성화
+          no-cache: true
+          pull: true  # 베이스 이미지도 강제로 최신으로
           build-args: |
             BUILDKIT_INLINE_CACHE=1
             COMMIT_SHA=${{ github.sha }}
             BUILD_TIME=${{ github.run_number }}
+            FORCE_REBUILD=true
           builder: ${{ steps.buildx.outputs.name }}
 
       - name: Build Time End
@@ -241,6 +250,8 @@ jobs:
             
               echo "Cleaning up unused images..."
               docker image prune -f > /dev/null 2>&1 || true
+              docker system prune -af --volumes || true
+              docker builder prune -af || true
             fi
 
       - name: Verify Batch deployment
