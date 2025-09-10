@@ -214,7 +214,7 @@ jobs:
             exit 1
           fi
           
-          # Blue/Green deployment with docker-compose
+          # Blue/Green deployment with docker compose
           CURRENT_CONTAINER=$(docker ps --filter "name=batch-" --format "{{.Names}}" | head -1)
           if [ "$CURRENT_CONTAINER" = "batch-blue" ]; then
             NEW_ENV="green"
@@ -234,8 +234,8 @@ jobs:
             docker compose --profile $NEW_ENV down batch-$NEW_ENV || true
           fi
           
-          # 새 환경 시작 (docker-compose 사용)
-          echo "Starting batch-$NEW_ENV with docker-compose..."
+          # 새 환경 시작 (docker compose 사용)
+          echo "Starting batch-$NEW_ENV with docker compose..."
           docker compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
           
           # 헬스체크
