@@ -125,175 +125,166 @@ jobs:
           echo "Build completed in ${build_duration} seconds ($((build_duration/60)) minutes)"
 
       - name: Deploy Flik Batch Server to Raspberry Pi
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ env.RASPBERRY_PI_HOST }}
-          username: ${{ env.RASPBERRY_PI_USER }}
-          key: ${{ secrets.RASPBERRY_PI_SSH_KEY }}
-          port: 2022
-          timeout: 300s
-          command_timeout: 30m
-          script: |
-            DEPLOY_START=$(date +%s)
-            echo "Starting batch server deployment at $(date)"
-            
-            # Clone or pull batch server repository
-            if [ ! -d "/home/yoon/flik-batch-server" ]; then
-              cd /home/yoon
-              echo "Cloning batch repository..."
-              git clone https://github.com/${{ github.repository }}.git flik-batch-server
-            else
-              cd /home/yoon/flik-batch-server
-              echo "Pulling latest changes..."
-              git pull origin main
-            fi
-            
+        run: |
+          # SSH 키 설정
+          mkdir -p ~/.ssh
+          echo "${{ secrets.RASPBERRY_PI_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p 2022 ${{ env.RASPBERRY_PI_HOST }} >> ~/.ssh/known_hosts
+
+          # SSH 연결 및 배포 스크립트 실행
+          ssh -i ~/.ssh/id_rsa -p 2022 -o ConnectTimeout=300 ${{ env.RASPBERRY_PI_USER }}@${{ env.RASPBERRY_PI_HOST }} << 'EOF'
+          DEPLOY_START=$(date +%s)
+          echo "Starting batch server deployment at $(date)"
+
+          # Clone or pull batch server repository
+          if [ ! -d "/home/yoon/flik-batch-server" ]; then
+            cd /home/yoon
+            echo "Cloning batch repository..."
+            git clone https://github.com/${{ github.repository }}.git flik-batch-server
+          else
             cd /home/yoon/flik-batch-server
-            
-            # .env 파일 생성
-            echo "Creating .env file..."
-            cat > .env << EOF
-            BUILD_TAG=${{ github.sha }}
-            DOCKER_REGISTRY=${{ env.REGISTRY }}
-            DOCKER_REPO=${{ env.IMAGE_NAME }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
-            EOF
-            
-            # Docker 레지스트리 로그인
-            echo "Logging into Docker registry..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            
-            # 이미지 pull 및 태그
-            export IMAGE_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-            export IMAGE_TAG="${{ github.sha }}-arm64"
-            echo "Pulling new batch image: ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG"
-            
-            # 이미지 존재 여부 확인 후 pull
-            if docker manifest inspect ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG > /dev/null 2>&1; then
-              docker pull ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG
-              docker tag ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG flik-batch:latest
-            else
-              echo "Error: Image not found in registry"
-              exit 1
-            fi
-            
-            # 인프라 서비스 상태 확인 (기존 컨테이너 활용)
-            echo "Checking infrastructure services..."
-            if ! docker ps | grep -q mysql; then
-              echo "Warning: MySQL container not running"
-              exit 1
-            fi
-            if ! docker ps | grep -q redis; then
-              echo "Warning: Redis container not running" 
-              exit 1
-            fi
-            
-            # Blue/Green deployment
-            CURRENT_CONTAINER=$(docker ps --filter "name=batch-" --format "{{.Names}}" | head -1)
-            if [ "$CURRENT_CONTAINER" = "batch-blue" ]; then
-              NEW_ENV="green"
-              OLD_ENV="blue"
-            else
-              NEW_ENV="blue"
-              OLD_ENV="green"
-            fi
-            
-            echo "Deploying batch server to $NEW_ENV environment..."
-            
-            # 새 환경 시작
-            docker compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
-            
-            # 헬스체크
-            echo "Waiting for batch-$NEW_ENV to be healthy..."
-            HEALTH_CHECK_COUNT=0
-            MAX_HEALTH_CHECKS=15
-            
-            while [ $HEALTH_CHECK_COUNT -lt $MAX_HEALTH_CHECKS ]; do
-              if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
-                echo "batch-$NEW_ENV is healthy after $((HEALTH_CHECK_COUNT * 10)) seconds"
-                break
-              fi
-              HEALTH_CHECK_COUNT=$((HEALTH_CHECK_COUNT + 1))
-              if [ $HEALTH_CHECK_COUNT -eq $MAX_HEALTH_CHECKS ]; then
-                echo "batch-$NEW_ENV failed to start after $((MAX_HEALTH_CHECKS * 10)) seconds"
-                docker logs batch-$NEW_ENV --tail 20
-                exit 1
-              fi
-              echo "Health check $HEALTH_CHECK_COUNT/$MAX_HEALTH_CHECKS..."
-              sleep 10
-            done
-            
-            # 배치 서버 테스트
-            echo "Testing batch deployment..."
-            sleep 3
-            
-            TEST_RESULTS=""
+            echo "Pulling latest changes..."
+            git pull origin main
+          fi
+
+          cd /home/yoon/flik-batch-server
+
+          # .env 파일 생성 (구문 오류 수정)
+          echo "Creating .env file..."
+          cat > .env << ENVEOF
+          BUILD_TAG=${{ github.sha }}
+          DOCKER_REGISTRY=${{ env.REGISTRY }}
+          DOCKER_REPO=${{ env.IMAGE_NAME }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          ENVEOF
+
+          # Docker 레지스트리 로그인
+          echo "Logging into Docker registry..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+          # 이미지 pull 및 태그
+          export IMAGE_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          export IMAGE_TAG="${{ github.sha }}-arm64"
+          echo "Pulling new batch image: ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG"
+
+          # 이미지 존재 여부 확인 후 pull
+          if docker manifest inspect ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG > /dev/null 2>&1; then
+            docker pull ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG
+            docker tag ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG flik-batch:latest
+          else
+            echo "Error: Image not found in registry"
+            exit 1
+          fi
+
+          # 인프라 서비스 상태 확인
+          echo "Checking infrastructure services..."
+          if ! docker ps | grep -q mysql; then
+            echo "Warning: MySQL container not running"
+            exit 1
+          fi
+          if ! docker ps | grep -q redis; then
+            echo "Warning: Redis container not running"
+            exit 1
+          fi
+
+          # Blue/Green deployment
+          CURRENT_CONTAINER=$(docker ps --filter "name=batch-" --format "{{.Names}}" | head -1)
+          if [ "$CURRENT_CONTAINER" = "batch-blue" ]; then
+            NEW_ENV="green"
+            OLD_ENV="blue"
+          else
+            NEW_ENV="blue"
+            OLD_ENV="green"
+          fi
+
+          echo "Deploying batch server to $NEW_ENV environment..."
+
+          # 새 환경 시작
+          docker compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
+
+          # 헬스체크
+          echo "Waiting for batch-$NEW_ENV to be healthy..."
+          HEALTH_CHECK_COUNT=0
+          MAX_HEALTH_CHECKS=15
+
+          while [ $HEALTH_CHECK_COUNT -lt $MAX_HEALTH_CHECKS ]; do
             if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
-              TEST_RESULTS="${TEST_RESULTS}health:ok "
-            else
-              TEST_RESULTS="${TEST_RESULTS}health:fail "
+              echo "batch-$NEW_ENV is healthy after $((HEALTH_CHECK_COUNT * 10)) seconds"
+              break
             fi
-            
-            if echo "$TEST_RESULTS" | grep -q "fail"; then
-              echo "Batch deployment failed, test results: $TEST_RESULTS"
-              echo "Rolling back..."
-              docker compose --env-file .env stop batch-$NEW_ENV
-              if [ "$OLD_ENV" != "" ] && [ "$(docker ps -q -f name=batch-$OLD_ENV)" = "" ]; then
-                echo "Restarting previous environment: batch-$OLD_ENV"
-                docker compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV
-              fi
+            HEALTH_CHECK_COUNT=$((HEALTH_CHECK_COUNT + 1))
+            if [ $HEALTH_CHECK_COUNT -eq $MAX_HEALTH_CHECKS ]; then
+              echo "batch-$NEW_ENV failed to start after $((MAX_HEALTH_CHECKS * 10)) seconds"
+              docker logs batch-$NEW_ENV --tail 20
               exit 1
-            else
-              echo "Batch deployment successful, test results: $TEST_RESULTS"
-              echo "Stopping old environment ($OLD_ENV)..."
-              docker compose --env-file .env stop batch-$OLD_ENV
-            
-              DEPLOY_END=$(date +%s)
-              DEPLOY_DURATION=$((DEPLOY_END - DEPLOY_START))
-              echo "Batch Blue/Green deployment completed! Active: $NEW_ENV"
-              echo "Total deployment time: ${DEPLOY_DURATION} seconds ($((DEPLOY_DURATION/60)) minutes)"
-            
-              echo "Cleaning up old images and containers..."
-              # 중지된 batch 컨테이너만 제거
-              docker container prune -f --filter "label=com.docker.compose.service=batch-*" || true
-              
-              # 사용하지 않는 이미지만 제거 (latest 제외)
-              docker images | grep flik-batch | grep -v latest | awk '{print $3}' | xargs docker rmi -f || true
-              
-              # 시스템 정리 (볼륨 제외)
-              docker system prune -f || true
             fi
+            echo "Health check $HEALTH_CHECK_COUNT/$MAX_HEALTH_CHECKS..."
+            sleep 10
+          done
+
+          # 배치 서버 테스트
+          echo "Testing batch deployment..."
+          sleep 3
+
+          TEST_RESULTS=""
+          if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
+            TEST_RESULTS="${TEST_RESULTS}health:ok "
+          else
+            TEST_RESULTS="${TEST_RESULTS}health:fail "
+          fi
+
+          if echo "$TEST_RESULTS" | grep -q "fail"; then
+            echo "Batch deployment failed, test results: $TEST_RESULTS"
+            echo "Rolling back..."
+            docker compose --env-file .env stop batch-$NEW_ENV
+            if [ "$OLD_ENV" != "" ] && [ "$(docker ps -q -f name=batch-$OLD_ENV)" = "" ]; then
+              echo "Restarting previous environment: batch-$OLD_ENV"
+              docker compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV
+            fi
+            exit 1
+          else
+            echo "Batch deployment successful, test results: $TEST_RESULTS"
+            echo "Stopping old environment ($OLD_ENV)..."
+            docker compose --env-file .env stop batch-$OLD_ENV
+
+            DEPLOY_END=$(date +%s)
+            DEPLOY_DURATION=$((DEPLOY_END - DEPLOY_START))
+            echo "Batch Blue/Green deployment completed! Active: $NEW_ENV"
+            echo "Total deployment time: ${DEPLOY_DURATION} seconds ($((DEPLOY_DURATION/60)) minutes)"
+
+            echo "Cleaning up old images and containers..."
+            docker container prune -f --filter "label=com.docker.compose.service=batch-*" || true
+            docker images | grep flik-batch | grep -v latest | awk '{print $3}' | xargs docker rmi -f || true
+            docker system prune -f || true
+          fi
+          EOF
 
       - name: Verify Batch deployment
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ env.RASPBERRY_PI_HOST }}
-          username: ${{ env.RASPBERRY_PI_USER }}
-          key: ${{ secrets.RASPBERRY_PI_SSH_KEY }}
-          port: 2022
-          timeout: 60s
-          script: |
-            echo "Final verification of Batch endpoints..."
-            sleep 5
-            
-            echo "Testing batch health endpoint..."
-            if curl -sf http://localhost:8085/actuator/health || curl -sf http://localhost:8086/actuator/health; then
-              echo "Batch health check passed"
-            else
-              echo "Batch health check failed"
-            fi
-            
-            echo "Container Status:"
-            docker ps --filter "name=batch-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
-            
-            echo "System Resources:"
-            docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" $(docker ps --filter "name=batch-" -q) || true
+        run: |
+          ssh -i ~/.ssh/id_rsa -p 2022 ${{ env.RASPBERRY_PI_USER }}@${{ env.RASPBERRY_PI_HOST }} << 'EOF'
+          echo "Final verification of Batch endpoints..."
+          sleep 5
+
+          echo "Testing batch health endpoint..."
+          if curl -sf http://localhost:8085/actuator/health || curl -sf http://localhost:8086/actuator/health; then
+            echo "Batch health check passed"
+          else
+            echo "Batch health check failed"
+          fi
+
+          echo "Container Status:"
+          docker ps --filter "name=batch-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+
+          echo "System Resources:"
+          docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" $(docker ps --filter "name=batch-" -q) || true
+          EOF
 
       - name: Discord Success Notification
         if: success()
