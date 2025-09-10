@@ -9,7 +9,7 @@
 
     <!-- Rating이 null인 데이터 전용 파일 -->
     <appender name="NULL_RATING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/google-places-null-rating.log</file>
+        <file>/tmp/logs/google-places-not-found.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>logs/google-places-null-rating.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
