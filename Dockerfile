@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache curl
 
-# 빌드 인수로 캐시 무효화 강화
+# 빌드 인수로 캐시 무효화
 ARG COMMIT_SHA
 ARG BUILD_TIME
 ARG FORCE_REBUILD
@@ -17,24 +17,24 @@ COPY . .
 
 RUN chmod +x gradlew
 
-# 모든 캐시 디렉터리 강제 삭제
+# 빌드 정보 출력 및 기존 빌드 결과 정리
 RUN echo "Force rebuild: ${FORCE_REBUILD}" && \
     echo "Building with COMMIT_SHA: ${COMMIT_SHA}" && \
     echo "Build time: ${BUILD_TIME}" && \
-    rm -rf build/ .gradle/ ~/.gradle/ /root/.gradle/ || true && \
-    find . -name "*.class" -delete || true && \
-    find . -name "*.jar" -delete || true
+    rm -rf build/ .gradle/ || true
 
-# 완전한 clean build (모든 캐시 및 점진적 빌드 비활성화)
-RUN ./gradlew clean build -x test \
+# 단계별 빌드 (안정성 향상)
+RUN ./gradlew clean \
     --no-daemon \
-    --parallel \
-    --max-workers=4 \
     --no-build-cache \
-    --refresh-dependencies \
+    --refresh-dependencies
+
+# 메인 빌드 (옵션 단순화)
+RUN ./gradlew build -x test \
+    --no-daemon \
+    --no-build-cache \
     --rerun-tasks \
-    --no-incremental \
-    --info
+    --max-workers=2
 
 # 최종 실행 이미지
 FROM eclipse-temurin:21-jre-alpine
