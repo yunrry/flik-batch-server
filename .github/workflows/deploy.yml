@@ -16,6 +16,7 @@ env:
   TOURISM_API_SERVICE_KEY: ${{ secrets.TOURISM_API_SERVICE_KEY }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
   DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
 
 jobs:
   test:
@@ -124,7 +125,7 @@ jobs:
           echo "Build completed in ${build_duration} seconds ($((build_duration/60)) minutes)"
 
       - name: Deploy Flik Batch Server to Raspberry Pi
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ env.RASPBERRY_PI_HOST }}
           username: ${{ env.RASPBERRY_PI_USER }}
@@ -161,6 +162,7 @@ jobs:
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
             EOF
             
             # Docker 레지스트리 로그인
@@ -269,7 +271,7 @@ jobs:
             fi
 
       - name: Verify Batch deployment
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ env.RASPBERRY_PI_HOST }}
           username: ${{ env.RASPBERRY_PI_USER }}

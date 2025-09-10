@@ -12,50 +12,60 @@ ENV COMMIT_SHA=${COMMIT_SHA}
 ENV BUILD_TIME=${BUILD_TIME}
 ENV FORCE_REBUILD=${FORCE_REBUILD}
 
-# 전체 프로젝트 복사
-COPY . .
+# Gradle wrapper와 빌드 스크립트만 먼저 복사
+COPY gradlew .
+COPY gradle/ gradle/
+COPY build.gradle .
+COPY settings.gradle .
 
 RUN chmod +x gradlew
+
+# 의존성 다운로드 (캐시 레이어 생성)
+RUN ./gradlew dependencies --no-daemon --refresh-dependencies || true
+
+# 전체 소스코드 복사
+COPY . .
 
 # 빌드 정보 출력 및 기존 빌드 결과 정리
 RUN echo "Force rebuild: ${FORCE_REBUILD}" && \
     echo "Building with COMMIT_SHA: ${COMMIT_SHA}" && \
     echo "Build time: ${BUILD_TIME}" && \
-    rm -rf build/ .gradle/ || true
+    rm -rf build/ .gradle/caches/build-cache-* || true
 
-# 단계별 빌드 (안정성 향상)
-RUN ./gradlew clean \
+# 완전한 클린 빌드 (최신 의존성)
+RUN ./gradlew clean build -x test \
     --no-daemon \
     --no-build-cache \
-    --refresh-dependencies
-
-# 메인 빌드 (옵션 단순화)
-RUN ./gradlew build -x test \
-    --no-daemon \
-    --no-build-cache \
+    --refresh-dependencies \
     --rerun-tasks \
-    --max-workers=2
+    --max-workers=2 \
+    --stacktrace
 
 # 최종 실행 이미지
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl tzdata
+
+# 타임존 설정
+ENV TZ=Asia/Seoul
 
 # 비root 사용자 생성
 RUN addgroup -g 1001 -S batch && adduser -u 1001 -S batch -G batch
-USER batch
 
-# JAR 파일 복사
-COPY --from=builder --chown=batch:batch /app/build/libs/*.jar app.jar
+# JAR 파일 복사 (root로 복사 후 권한 변경)
+COPY --from=builder /app/build/libs/*.jar app.jar
+RUN chown batch:batch app.jar
+
+USER batch
 
 EXPOSE 8081
 
 # JVM 최적화 (배치용)
-ENV JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -Duser.timezone=Asia/Seoul"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:8081/actuator/health || exit 1
