@@ -38,8 +38,9 @@ RUN ./gradlew clean build -x test \
     --no-build-cache \
     --refresh-dependencies \
     --rerun-tasks \
-    --max-workers=2 \
-    --stacktrace
+    --max-workers=4 \
+    --stacktrace \
+    --info
 
 # 최종 실행 이미지
 FROM eclipse-temurin:21-jre-alpine
