@@ -197,12 +197,10 @@ jobs:
           
           echo "Successfully pulled and tagged: $PULLED_IMAGE"
           
-          # 네트워크 존재 확인
+          # 네트워크 존재 확인 및 생성
           if ! docker network ls | grep -q goormthon-java_dormung-network; then
-            echo "Error: goormthon-java_dormung-network not found"
-            echo "Available networks:"
-            docker network ls
-            exit 1
+            echo "Creating goormthon-java_dormung-network..."
+            docker network create goormthon-java_dormung-network
           fi
           
           # 인프라 서비스 상태 확인
@@ -216,47 +214,29 @@ jobs:
             exit 1
           fi
           
-          # Blue/Green deployment
+          # Blue/Green deployment with docker-compose
           CURRENT_CONTAINER=$(docker ps --filter "name=batch-" --format "{{.Names}}" | head -1)
           if [ "$CURRENT_CONTAINER" = "batch-blue" ]; then
             NEW_ENV="green"
             OLD_ENV="blue"
-            NEW_PORT="8085"
+            NEW_PORT="8086"
           else
             NEW_ENV="blue"
             OLD_ENV="green"
-            NEW_PORT="8086"
+            NEW_PORT="8085"
           fi
           
           echo "Deploying batch server to $NEW_ENV environment (port: $NEW_PORT)..."
           
-          # 기존 컨테이너 정리
+          # 기존 NEW_ENV 컨테이너 중지 (있다면)
           if docker ps -q -f name=batch-$NEW_ENV | grep -q .; then
             echo "Stopping existing batch-$NEW_ENV container..."
-            docker stop batch-$NEW_ENV || true
-            docker rm batch-$NEW_ENV || true
+            docker-compose --profile $NEW_ENV down batch-$NEW_ENV || true
           fi
           
-          # 새 환경 시작
-          docker run -d \
-            --name batch-$NEW_ENV \
-            --network goormthon-java_dormung-network \
-            -p $NEW_PORT:8081 \
-            -e SPRING_PROFILES_ACTIVE=prod \
-            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul \
-            -e SPRING_DATASOURCE_USERNAME=${{ secrets.MYSQL_USER }} \
-            -e SPRING_DATASOURCE_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-            -e SPRING_DATA_REDIS_HOST=redis \
-            -e SPRING_DATA_REDIS_PORT=6379 \
-            -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-            -e TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }} \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -e DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }} \
-            -e GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }} \
-            -e BUILD_INFO=${{ github.sha }} \
-            -e DEPLOYMENT_ENV=$NEW_ENV \
-            --restart unless-stopped \
-            flik-batch:latest
+          # 새 환경 시작 (docker-compose 사용)
+          echo "Starting batch-$NEW_ENV with docker-compose..."
+          docker-compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
           
           # 헬스체크
           echo "Waiting for batch-$NEW_ENV to be healthy..."
@@ -272,7 +252,7 @@ jobs:
             if [ $HEALTH_CHECK_COUNT -eq $MAX_HEALTH_CHECKS ]; then
               echo "batch-$NEW_ENV failed to start after $((MAX_HEALTH_CHECKS * 10)) seconds"
               echo "Container logs:"
-              docker logs batch-$NEW_ENV --tail 30
+              docker-compose logs batch-$NEW_ENV --tail 30
               exit 1
             fi
             echo "Health check $HEALTH_CHECK_COUNT/$MAX_HEALTH_CHECKS..."
@@ -290,38 +270,20 @@ jobs:
           else
             HEALTH_RESULT="fail"
           fi
-                    
+          
           echo "Test results - Health: $HEALTH_RESULT"
           
           if [ "$HEALTH_RESULT" = "fail" ]; then
             echo "Batch deployment failed - health check failed"
             echo "Container logs:"
-            docker logs batch-$NEW_ENV --tail 50
+            docker-compose logs batch-$NEW_ENV --tail 50
           
             echo "Rolling back..."
-            docker stop batch-$NEW_ENV || true
-            docker rm batch-$NEW_ENV || true
+            docker-compose --profile $NEW_ENV down batch-$NEW_ENV || true
           
-            if [ "$OLD_ENV" != "" ] && docker images | grep -q flik-batch; then
+            if [ "$OLD_ENV" != "" ]; then
               echo "Attempting to restart previous environment: batch-$OLD_ENV"
-              OLD_PORT=$([ "$OLD_ENV" = "blue" ] && echo "8086" || echo "8085")
-              docker run -d \
-                --name batch-$OLD_ENV \
-                --network goormthon-java_dormung-network \
-                -p $OLD_PORT:8081 \
-                -e SPRING_PROFILES_ACTIVE=prod \
-                -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul \
-                -e SPRING_DATASOURCE_USERNAME=${{ secrets.MYSQL_USER }} \
-                -e SPRING_DATASOURCE_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-                -e SPRING_DATA_REDIS_HOST=redis \
-                -e SPRING_DATA_REDIS_PORT=6379 \
-                -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-                -e TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }} \
-                -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-                -e DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }} \
-                -e GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }} \
-                --restart unless-stopped \
-                flik-batch:latest || echo "Failed to restart old environment"
+              docker-compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV || echo "Failed to restart old environment"
             fi
             exit 1
           else
@@ -330,8 +292,7 @@ jobs:
             # 이전 환경 정리
             if [ "$OLD_ENV" != "" ] && docker ps -q -f name=batch-$OLD_ENV | grep -q .; then
               echo "Stopping old environment: batch-$OLD_ENV"
-              docker stop batch-$OLD_ENV || true
-              docker rm batch-$OLD_ENV || true
+              docker-compose --profile $OLD_ENV down batch-$OLD_ENV || true
             fi
           
             DEPLOY_END=$(date +%s)
@@ -340,10 +301,10 @@ jobs:
             echo "Active environment: batch-$NEW_ENV (port: $NEW_PORT)"
             echo "Total deployment time: ${DEPLOY_DURATION} seconds ($((DEPLOY_DURATION/60)) minutes)"
           
-            # 정리 작업
+            # 정리 작업 (중요한 네트워크 보호)
             echo "Cleaning up unused Docker resources..."
           
-            # 사용하지 않는 이미지 모두 삭제
+            # 사용하지 않는 이미지 삭제
             echo "Removing unused images..."
             docker image prune -af || true
           
@@ -356,15 +317,6 @@ jobs:
             # 중지된 컨테이너 삭제
             docker container prune -f || true
           
-            # 사용하지 않는 네트워크 삭제
-            docker network prune -f || true
-          
-            # 사용하지 않는 볼륨 삭제 (주의: 데이터 볼륨 제외)
-            docker volume prune -f || true
-          
-            # 전체 시스템 정리 (최근 24시간 이전)
-            docker system prune -af --filter "until=24h" || true
-          
             echo "Docker cleanup completed"
           
             # 디스크 사용량 확인
@@ -373,6 +325,8 @@ jobs:
             docker system df || true
           fi
           EOF
+
+
 
       - name: Verify Batch deployment
         run: |
