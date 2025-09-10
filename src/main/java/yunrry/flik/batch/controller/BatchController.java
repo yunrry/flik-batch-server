@@ -25,7 +25,7 @@ public class BatchController {
     private final Job tourismDataJob;
     private final JobRepository jobRepository;
     private final RateLimitService rateLimitService;
-
+    private final Job detailIntroOnlyJob;
 
     @GetMapping("/test")
     public String test() {
@@ -132,6 +132,80 @@ public class BatchController {
             log.error("Failed to stop batch job", e);
             response.put("success", false);
             response.put("message", "Failed to stop job: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+
+    @PostMapping("/tourism/detail-intro/run")
+    public ResponseEntity<Map<String, Object>> runDetailIntroOnly() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // API 제한 확인
+            if (!rateLimitService.canMakeRequest()) {
+                response.put("success", false);
+                response.put("message", "API rate limit exceeded");
+                response.put("remainingCount", rateLimitService.getRemainingCount());
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("executionTime", LocalDateTime.now().toString())
+                    .addString("triggerType", "MANUAL_DETAIL_INTRO")
+                    .toJobParameters();
+
+            JobExecution jobExecution = jobLauncher.run(detailIntroOnlyJob, jobParameters);
+
+            response.put("success", true);
+            response.put("jobExecutionId", jobExecution.getId());
+            response.put("status", jobExecution.getStatus().toString());
+            response.put("startTime", jobExecution.getStartTime());
+            response.put("apiCallsRemaining", rateLimitService.getRemainingCount());
+
+            log.info("Detail intro batch job started manually - Execution ID: {}", jobExecution.getId());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Failed to start detail intro batch job", e);
+            response.put("success", false);
+            response.put("message", "Failed to start detail intro job: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/tourism/detail-intro/status/{jobExecutionId}")
+    public ResponseEntity<Map<String, Object>> getDetailIntroStatus(@PathVariable Long jobExecutionId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            JobExecution jobExecution = jobRepository.getLastJobExecution(detailIntroOnlyJob.getName(),
+                    new JobParametersBuilder().addLong("jobExecutionId", jobExecutionId).toJobParameters());
+
+            if (jobExecution == null) {
+                response.put("success", false);
+                response.put("message", "Detail intro job execution not found");
+                return ResponseEntity.notFound().build();
+            }
+
+            response.put("success", true);
+            response.put("jobExecutionId", jobExecution.getId());
+            response.put("status", jobExecution.getStatus().toString());
+            response.put("startTime", jobExecution.getStartTime());
+            response.put("endTime", jobExecution.getEndTime());
+            response.put("exitStatus", jobExecution.getExitStatus().getExitCode());
+
+            // Step 정보 추가
+            response.put("steps", jobExecution.getStepExecutions().stream()
+                    .map(this::mapStepExecution)
+                    .toList());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Failed to get detail intro batch status", e);
+            response.put("success", false);
+            response.put("message", "Failed to get status: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }

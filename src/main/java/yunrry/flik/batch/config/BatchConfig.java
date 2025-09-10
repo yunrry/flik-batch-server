@@ -22,8 +22,6 @@ import yunrry.flik.batch.listener.BatchJobListener;
 @RequiredArgsConstructor
 public class BatchConfig {
 
-//    private final JobRepository jobRepository;
-//    private final PlatformTransactionManager transactionManager;
     private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
@@ -32,11 +30,11 @@ public class BatchConfig {
     private final GooglePlacesEnrichmentJob googlePlacesEnrichmentJob;
 
     @Bean
-    public Job tourismDataJob(JobRepository jobRepository) {
+    public Job tourismDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(areaBasedListStep(jobRepository, null))
-                .next(detailIntroStep(jobRepository, null))
+                .start(areaBasedListStep(jobRepository, transactionManager))
+                .next(detailIntroStep(jobRepository, transactionManager))
                 .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
                 .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
                 .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
@@ -63,6 +61,14 @@ public class BatchConfig {
                 .reader(detailItemReader)
                 .processor(tourismDataProcessor.createDetailProcessor())
                 .writer(tourismDataWriter.createDetailWriter())
+                .build();
+    }
+
+    @Bean
+    public Job detailIntroOnlyJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new JobBuilder("detailIntroOnlyJob", jobRepository)
+                .listener(batchJobListener)
+                .start(detailIntroStep(jobRepository, transactionManager))
                 .build();
     }
 }

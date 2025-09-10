@@ -103,7 +103,7 @@ public class GooglePlacesEnrichmentJob {
         return new JdbcCursorItemReaderBuilder<TourismRawData>()
                 .name("leisureSportsReader")
                 .dataSource(dataSource)
-                .sql("SELECT content_id, title, addr1 FROM fetched_leisure_sports WHERE google_rating IS NULL")
+                .sql("SELECT content_id, title, addr1 FROM fetched_sports_recreation WHERE google_rating IS NULL")
                 .rowMapper(this::mapRow)
                 .build();
     }
@@ -131,7 +131,7 @@ public class GooglePlacesEnrichmentJob {
     public ItemWriter<TourismRawData> leisureSportsWriter() {
         return items -> {
             for (TourismRawData item : items) {
-                updateGoogleData("fetched_leisure_sports", item);
+                updateGoogleData("fetched_sports_recreation", item);
             }
         };
     }
