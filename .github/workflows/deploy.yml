@@ -169,9 +169,17 @@ jobs:
             
             # 이미지 pull 및 태그
             export IMAGE_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-            echo "Pulling new batch image..."
-            docker pull ${{ env.REGISTRY }}/$IMAGE_LOWER:${{ github.sha }}-arm64
-            docker tag ${{ env.REGISTRY }}/$IMAGE_LOWER:${{ github.sha }}-arm64 flik-batch:latest
+            export IMAGE_TAG="${{ github.sha }}-arm64"
+            echo "Pulling new batch image: ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG"
+            
+            # 이미지 존재 여부 확인 후 pull
+            if docker manifest inspect ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG > /dev/null 2>&1; then
+              docker pull ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG
+              docker tag ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG flik-batch:latest
+            else
+              echo "Error: Image not found in registry"
+              exit 1
+            fi
             
             # 인프라 서비스 상태 확인 (기존 컨테이너 활용)
             echo "Checking infrastructure services..."
@@ -249,10 +257,15 @@ jobs:
               echo "Batch Blue/Green deployment completed! Active: $NEW_ENV"
               echo "Total deployment time: ${DEPLOY_DURATION} seconds ($((DEPLOY_DURATION/60)) minutes)"
             
-              echo "Cleaning up unused images..."
-              docker image prune -f > /dev/null 2>&1 || true
-              docker system prune -af --volumes || true
-              docker builder prune -af || true
+              echo "Cleaning up old images and containers..."
+              # 중지된 batch 컨테이너만 제거
+              docker container prune -f --filter "label=com.docker.compose.service=batch-*" || true
+              
+              # 사용하지 않는 이미지만 제거 (latest 제외)
+              docker images | grep flik-batch | grep -v latest | awk '{print $3}' | xargs docker rmi -f || true
+              
+              # 시스템 정리 (볼륨 제외)
+              docker system prune -f || true
             fi
 
       - name: Verify Batch deployment
