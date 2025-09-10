@@ -35,12 +35,12 @@ public class BatchConfig {
                 .listener(batchJobListener)
                 .start(areaBasedListStep(jobRepository, transactionManager))
                 .next(detailIntroStep(jobRepository, transactionManager))
-                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
-                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
-                .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
-                .next(googlePlacesEnrichmentJob.enrichCulturalFacilitiesStep())
-                .next(googlePlacesEnrichmentJob.enrichLeisureSportsStep())
-                .next(googlePlacesEnrichmentJob.enrichShoppingStep())
+//                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
+//                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
+//                .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
+//                .next(googlePlacesEnrichmentJob.enrichCulturalFacilitiesStep())
+//                .next(googlePlacesEnrichmentJob.enrichLeisureSportsStep())
+//                .next(googlePlacesEnrichmentJob.enrichShoppingStep())
                 .build();
     }
 
