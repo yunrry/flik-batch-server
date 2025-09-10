@@ -5,6 +5,12 @@ WORKDIR /app
 
 RUN apk add --no-cache curl
 
+# 빌드 인수로 커밋 해시 받기 (캐시 무효화용)
+ARG COMMIT_SHA
+ARG BUILD_TIME
+ENV COMMIT_SHA=${COMMIT_SHA}
+ENV BUILD_TIME=${BUILD_TIME}
+
 # Gradle 설정 먼저 복사
 COPY gradlew .
 COPY gradle gradle/
@@ -12,14 +18,18 @@ COPY build.gradle settings.gradle ./
 
 RUN chmod +x gradlew
 
-# 의존성 다운로드
+# 의존성 다운로드 (이 레이어는 gradle 파일이 변경될 때만 재빌드)
 RUN ./gradlew dependencies --no-daemon --parallel --max-workers=4
 
-# 소스 코드 복사
+# 소스 코드 복사 (커밋 해시로 캐시 무효화)
 COPY src src/
 
-# 빌드 실행
-RUN ./gradlew clean build -x test --no-daemon --parallel --max-workers=4 --build-cache
+# 빌드 정보 출력 (디버깅용)
+RUN echo "Building with COMMIT_SHA: ${COMMIT_SHA}" && \
+    echo "Build time: ${BUILD_TIME}"
+
+# 완전한 clean build 실행 (캐시 비활성화)
+RUN ./gradlew clean build -x test --no-daemon --parallel --max-workers=4 --no-build-cache
 
 # 최종 실행 이미지
 FROM eclipse-temurin:21-jre-alpine
