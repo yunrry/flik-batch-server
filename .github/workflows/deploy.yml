@@ -231,12 +231,12 @@ jobs:
           # 기존 NEW_ENV 컨테이너 중지 (있다면)
           if docker ps -q -f name=batch-$NEW_ENV | grep -q .; then
             echo "Stopping existing batch-$NEW_ENV container..."
-            docker-compose --profile $NEW_ENV down batch-$NEW_ENV || true
+            docker compose --profile $NEW_ENV down batch-$NEW_ENV || true
           fi
           
           # 새 환경 시작 (docker-compose 사용)
           echo "Starting batch-$NEW_ENV with docker-compose..."
-          docker-compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
+          docker compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
           
           # 헬스체크
           echo "Waiting for batch-$NEW_ENV to be healthy..."
@@ -252,7 +252,7 @@ jobs:
             if [ $HEALTH_CHECK_COUNT -eq $MAX_HEALTH_CHECKS ]; then
               echo "batch-$NEW_ENV failed to start after $((MAX_HEALTH_CHECKS * 10)) seconds"
               echo "Container logs:"
-              docker-compose logs batch-$NEW_ENV --tail 30
+              docker compose logs batch-$NEW_ENV --tail 30
               exit 1
             fi
             echo "Health check $HEALTH_CHECK_COUNT/$MAX_HEALTH_CHECKS..."
@@ -276,14 +276,14 @@ jobs:
           if [ "$HEALTH_RESULT" = "fail" ]; then
             echo "Batch deployment failed - health check failed"
             echo "Container logs:"
-            docker-compose logs batch-$NEW_ENV --tail 50
+            docker compose logs batch-$NEW_ENV --tail 50
           
             echo "Rolling back..."
-            docker-compose --profile $NEW_ENV down batch-$NEW_ENV || true
+            docker compose --profile $NEW_ENV down batch-$NEW_ENV || true
           
             if [ "$OLD_ENV" != "" ]; then
               echo "Attempting to restart previous environment: batch-$OLD_ENV"
-              docker-compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV || echo "Failed to restart old environment"
+              docker compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV || echo "Failed to restart old environment"
             fi
             exit 1
           else
@@ -292,7 +292,7 @@ jobs:
             # 이전 환경 정리
             if [ "$OLD_ENV" != "" ] && docker ps -q -f name=batch-$OLD_ENV | grep -q .; then
               echo "Stopping old environment: batch-$OLD_ENV"
-              docker-compose --profile $OLD_ENV down batch-$OLD_ENV || true
+              docker compose --profile $OLD_ENV down batch-$OLD_ENV || true
             fi
           
             DEPLOY_END=$(date +%s)
