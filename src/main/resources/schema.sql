@@ -1,6 +1,7 @@
 -- flik-batch-server 테이블 초기화 SQL
 -- 파일 위치: src/main/resources/schema.sql
 USE flik_batch_db;
+
 -- 1. 관광지 데이터 테이블 (content_type_id: 12)
 CREATE TABLE IF NOT EXISTS fetched_tourist_attractions (
                                                            id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -30,11 +31,11 @@ CREATE TABLE IF NOT EXISTS fetched_tourist_attractions (
                                                            usetime TEXT,
                                                            restdate TEXT,
                                                            parking TEXT,
-                                                           parkingfee VARCHAR(100) DEFAULT '',
-                                                           infocenter VARCHAR(200) DEFAULT '',
-                                                           chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                           chkpet VARCHAR(50) DEFAULT '',
-                                                           chkcreditcard VARCHAR(50) DEFAULT '',
+                                                           parkingfee VARCHAR(500) DEFAULT '',
+                                                           infocenter VARCHAR(500) DEFAULT '',
+                                                           chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                           chkpet VARCHAR(500) DEFAULT '',
+                                                           chkcreditcard VARCHAR(500) DEFAULT '',
                                                            heritage1 VARCHAR(10) DEFAULT '',
                                                            heritage2 VARCHAR(10) DEFAULT '',
                                                            heritage3 VARCHAR(10) DEFAULT '',
@@ -43,6 +44,10 @@ CREATE TABLE IF NOT EXISTS fetched_tourist_attractions (
                                                            expagerange VARCHAR(100) DEFAULT '',
                                                            accomcount VARCHAR(50) DEFAULT '',
                                                            useseason VARCHAR(200) DEFAULT '',
+                                                           google_place_id VARCHAR(255),
+                                                           google_rating DECIMAL(2,1),
+                                                           google_review_count INT,
+                                                           google_reviews TEXT,
 
                                                            INDEX idx_content_type (content_type_id),
                                                            INDEX idx_area (area_code, sigungu_code),
@@ -78,15 +83,19 @@ CREATE TABLE IF NOT EXISTS fetched_cultural_facilities (
                                                            usetime TEXT,
                                                            restdate TEXT,
                                                            parking TEXT,
-                                                           parkingfee VARCHAR(100) DEFAULT '',
-                                                           infocenter VARCHAR(200) DEFAULT '',
-                                                           chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                           chkpet VARCHAR(50) DEFAULT '',
-                                                           chkcreditcard VARCHAR(50) DEFAULT '',
-                                                           scale VARCHAR(100) DEFAULT '',
-                                                           usefee VARCHAR(200) DEFAULT '',
-                                                           discountinfo VARCHAR(200) DEFAULT '',
-                                                           spendtime VARCHAR(100) DEFAULT '',
+                                                           parkingfee VARCHAR(500) DEFAULT '',
+                                                           infocenter VARCHAR(500) DEFAULT '',
+                                                           chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                           chkpet VARCHAR(500) DEFAULT '',
+                                                           chkcreditcard VARCHAR(500) DEFAULT '',
+                                                           scale VARCHAR(500) DEFAULT '',
+                                                           usefee VARCHAR(500) DEFAULT '',
+                                                           discountinfo VARCHAR(500) DEFAULT '',
+                                                           spendtime VARCHAR(500) DEFAULT '',
+                                                           google_place_id VARCHAR(255),
+                                                           google_rating DECIMAL(2,1),
+                                                           google_review_count INT,
+                                                           google_reviews TEXT,
 
                                                            INDEX idx_content_type (content_type_id),
                                                            INDEX idx_area (area_code, sigungu_code),
@@ -122,25 +131,25 @@ CREATE TABLE IF NOT EXISTS fetched_festivals_events (
                                                         usetime TEXT,
                                                         restdate TEXT,
                                                         parking TEXT,
-                                                        parkingfee VARCHAR(100) DEFAULT '',
-                                                        infocenter VARCHAR(200) DEFAULT '',
-                                                        chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                        chkpet VARCHAR(50) DEFAULT '',
-                                                        chkcreditcard VARCHAR(50) DEFAULT '',
+                                                        parkingfee VARCHAR(500) DEFAULT '',
+                                                        infocenter VARCHAR(500) DEFAULT '',
+                                                        chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                        chkpet VARCHAR(500) DEFAULT '',
+                                                        chkcreditcard VARCHAR(500) DEFAULT '',
                                                         sponsor1 VARCHAR(200) DEFAULT '',
-                                                        sponsor1tel TEXT,
+                                                        sponsor1tel VARCHAR(50) DEFAULT '',
                                                         sponsor2 VARCHAR(200) DEFAULT '',
                                                         sponsor2tel VARCHAR(50) DEFAULT '',
-                                                        eventenddate VARCHAR(20) DEFAULT '',
-                                                        playtime VARCHAR(100) DEFAULT '',
-                                                        eventplace VARCHAR(500) DEFAULT '',
+                                                        eventenddate VARCHAR(50) DEFAULT '',
+                                                        playtime VARCHAR(200) DEFAULT '',
+                                                        eventplace VARCHAR(200) DEFAULT '',
                                                         eventhomepage VARCHAR(500) DEFAULT '',
-                                                        agelimit VARCHAR(100) DEFAULT '',
+                                                        agelimit VARCHAR(50) DEFAULT '',
                                                         bookingplace VARCHAR(200) DEFAULT '',
                                                         placeinfo TEXT,
                                                         subevent TEXT,
                                                         program TEXT,
-                                                        eventstartdate VARCHAR(20) DEFAULT '',
+                                                        eventstartdate VARCHAR(50) DEFAULT '',
                                                         usetimefestival VARCHAR(200) DEFAULT '',
                                                         discountinfofestival VARCHAR(200) DEFAULT '',
                                                         spendtimefestival VARCHAR(100) DEFAULT '',
@@ -182,17 +191,21 @@ CREATE TABLE IF NOT EXISTS fetched_sports_recreation (
                                                          usetime TEXT,
                                                          restdate TEXT,
                                                          parking TEXT,
-                                                         parkingfee VARCHAR(100) DEFAULT '',
-                                                         infocenter VARCHAR(200) DEFAULT '',
-                                                         chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                         chkpet VARCHAR(50) DEFAULT '',
-                                                         chkcreditcard VARCHAR(50) DEFAULT '',
+                                                         parkingfee VARCHAR(500) DEFAULT '',
+                                                         infocenter VARCHAR(500) DEFAULT '',
+                                                         chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                         chkpet VARCHAR(500) DEFAULT '',
+                                                         chkcreditcard VARCHAR(500) DEFAULT '',
                                                          openperiod VARCHAR(200) DEFAULT '',
                                                          reservation VARCHAR(200) DEFAULT '',
                                                          scaleleports VARCHAR(100) DEFAULT '',
                                                          accomcountleports VARCHAR(50) DEFAULT '',
                                                          usefeeleports VARCHAR(200) DEFAULT '',
                                                          expagerangeleports VARCHAR(100) DEFAULT '',
+                                                         google_place_id VARCHAR(255),
+                                                         google_rating DECIMAL(2,1),
+                                                         google_review_count INT,
+                                                         google_reviews TEXT,
 
                                                          INDEX idx_content_type (content_type_id),
                                                          INDEX idx_area (area_code, sigungu_code),
@@ -228,11 +241,11 @@ CREATE TABLE IF NOT EXISTS fetched_shopping (
                                                 usetime TEXT,
                                                 restdate TEXT,
                                                 parking TEXT,
-                                                parkingfee VARCHAR(100) DEFAULT '',
-                                                infocenter VARCHAR(200) DEFAULT '',
-                                                chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                chkpet VARCHAR(50) DEFAULT '',
-                                                chkcreditcard VARCHAR(50) DEFAULT '',
+                                                parkingfee VARCHAR(500) DEFAULT '',
+                                                infocenter VARCHAR(500) DEFAULT '',
+                                                chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                chkpet VARCHAR(500) DEFAULT '',
+                                                chkcreditcard VARCHAR(500) DEFAULT '',
                                                 saleitem TEXT,
                                                 saleitemcost VARCHAR(200) DEFAULT '',
                                                 fairday VARCHAR(200) DEFAULT '',
@@ -241,6 +254,10 @@ CREATE TABLE IF NOT EXISTS fetched_shopping (
                                                 culturecenter VARCHAR(200) DEFAULT '',
                                                 restroom VARCHAR(50) DEFAULT '',
                                                 scaleshopping VARCHAR(100) DEFAULT '',
+                                                google_place_id VARCHAR(255),
+                                                google_rating DECIMAL(2,1),
+                                                google_review_count INT,
+                                                google_reviews TEXT,
 
                                                 INDEX idx_content_type (content_type_id),
                                                 INDEX idx_area (area_code, sigungu_code),
@@ -276,11 +293,11 @@ CREATE TABLE IF NOT EXISTS fetched_restaurants (
                                                    usetime TEXT,
                                                    restdate TEXT,
                                                    parking TEXT,
-                                                   parkingfee VARCHAR(100) DEFAULT '',
-                                                   infocenter VARCHAR(200) DEFAULT '',
-                                                   chkbabycarriage VARCHAR(50) DEFAULT '',
-                                                   chkpet VARCHAR(50) DEFAULT '',
-                                                   chkcreditcard VARCHAR(50) DEFAULT '',
+                                                   parkingfee VARCHAR(500) DEFAULT '',
+                                                   infocenter VARCHAR(500) DEFAULT '',
+                                                   chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                   chkpet VARCHAR(500) DEFAULT '',
+                                                   chkcreditcard VARCHAR(500) DEFAULT '',
                                                    seat VARCHAR(50) DEFAULT '',
                                                    kidsfacility VARCHAR(10) DEFAULT '',
                                                    firstmenu TEXT,
@@ -292,87 +309,86 @@ CREATE TABLE IF NOT EXISTS fetched_restaurants (
                                                    discountinfofood VARCHAR(200) DEFAULT '',
                                                    reservationfood VARCHAR(200) DEFAULT '',
                                                    lcnsno VARCHAR(50) DEFAULT '',
+                                                   google_place_id VARCHAR(255),
+                                                   google_rating DECIMAL(2,1),
+                                                   google_review_count INT,
+                                                   google_reviews TEXT,
 
                                                    INDEX idx_content_type (content_type_id),
                                                    INDEX idx_area (area_code, sigungu_code),
                                                    INDEX idx_title (title(100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 7. 숙박시설 데이터 테이블 (content_type_id: 32)
+CREATE TABLE IF NOT EXISTS fetched_accommodations (
+                                                      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                                      content_id VARCHAR(50) NOT NULL UNIQUE,
+                                                      content_type_id VARCHAR(10) NOT NULL,
+                                                      content_type_name VARCHAR(50) NOT NULL,
+                                                      title VARCHAR(500) NOT NULL,
+                                                      addr1 VARCHAR(500),
+                                                      addr2 VARCHAR(500),
+                                                      first_image TEXT,
+                                                      first_image2 TEXT,
+                                                      map_x VARCHAR(50),
+                                                      map_y VARCHAR(50),
+                                                      area_code VARCHAR(10),
+                                                      sigungu_code VARCHAR(10),
+                                                      cat1 VARCHAR(10),
+                                                      cat2 VARCHAR(10),
+                                                      cat3 VARCHAR(10),
+                                                      created_time VARCHAR(50),
+                                                      modified_time VARCHAR(50),
+                                                      tel TEXT,
+                                                      zipcode VARCHAR(20),
+                                                      overview TEXT,
+                                                      source VARCHAR(255) DEFAULT 'http://apis.data.go.kr/B551011/KorService2',
+                                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                      usetime TEXT,
+                                                      restdate TEXT,
+                                                      parking TEXT,
+                                                      parkingfee VARCHAR(500) DEFAULT '',
+                                                      infocenter VARCHAR(500) DEFAULT '',
+                                                      chkbabycarriage VARCHAR(500) DEFAULT '',
+                                                      chkpet VARCHAR(500) DEFAULT '',
+                                                      chkcreditcard VARCHAR(500) DEFAULT '',
+                                                      roomcount VARCHAR(50) DEFAULT '',
+                                                      roomtype VARCHAR(200) DEFAULT '',
+                                                      refundregulation TEXT,
+                                                      checkintime TEXT,
+                                                      checkouttime TEXT,
+                                                      chkcooking VARCHAR(50) DEFAULT '',
+                                                      seminar VARCHAR(10) DEFAULT '',
+                                                      sports VARCHAR(10) DEFAULT '',
+                                                      sauna VARCHAR(10) DEFAULT '',
+                                                      beauty VARCHAR(10) DEFAULT '',
+                                                      beverage VARCHAR(10) DEFAULT '',
+                                                      karaoke VARCHAR(10) DEFAULT '',
+                                                      barbecue VARCHAR(10) DEFAULT '',
+                                                      campfire VARCHAR(10) DEFAULT '',
+                                                      bicycle VARCHAR(10) DEFAULT '',
+                                                      fitness VARCHAR(10) DEFAULT '',
+                                                      publicpc VARCHAR(10) DEFAULT '',
+                                                      publicbath VARCHAR(10) DEFAULT '',
+                                                      subfacility TEXT,
+                                                      foodplace VARCHAR(200) DEFAULT '',
+                                                      reservationurl VARCHAR(500) DEFAULT '',
+                                                      pickup VARCHAR(200) DEFAULT '',
+                                                      reservationlodging VARCHAR(200) DEFAULT '',
+                                                      scalelodging VARCHAR(100) DEFAULT '',
+                                                      accomcountlodging VARCHAR(50) DEFAULT '',
+                                                      google_place_id VARCHAR(255),
+                                                      google_rating DECIMAL(2,1),
+                                                      google_review_count INT,
+                                                      google_reviews TEXT,
 
+                                                      INDEX idx_content_type (content_type_id),
+                                                      INDEX idx_area (area_code, sigungu_code),
+                                                      INDEX idx_title (title(100))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- flik_db.fetched_accommodations definition
-
-CREATE TABLE IF NOT EXISTS `fetched_accommodations` (
-                                          `id` bigint NOT NULL AUTO_INCREMENT,
-                                          `content_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-                                          `content_type_id` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
-                                          `content_type_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-                                          `title` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
-                                          `addr1` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `addr2` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `first_image` text COLLATE utf8mb4_unicode_ci,
-                                          `first_image2` text COLLATE utf8mb4_unicode_ci,
-                                          `map_x` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `map_y` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `area_code` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `sigungu_code` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `cat1` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `cat2` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `cat3` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `created_time` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `modified_time` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `tel` text COLLATE utf8mb4_unicode_ci,
-                                          `zipcode` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-                                          `overview` text COLLATE utf8mb4_unicode_ci,
-                                          `source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'http://apis.data.go.kr/B551011/KorService2',
-                                          `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-                                          `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                          `usetime` text COLLATE utf8mb4_unicode_ci,
-                                          `restdate` text COLLATE utf8mb4_unicode_ci,
-                                          `parking` text COLLATE utf8mb4_unicode_ci,
-                                          `parkingfee` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `infocenter` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `chkbabycarriage` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `chkpet` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `chkcreditcard` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `roomcount` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `roomtype` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `refundregulation` text COLLATE utf8mb4_unicode_ci,
-                                          `checkintime` text COLLATE utf8mb4_unicode_ci,
-                                          `checkouttime` text COLLATE utf8mb4_unicode_ci,
-                                          `chkcooking` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `seminar` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `sports` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `sauna` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `beauty` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `beverage` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `karaoke` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `barbecue` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `campfire` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `bicycle` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `fitness` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `publicpc` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `publicbath` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `subfacility` text COLLATE utf8mb4_unicode_ci,
-                                          `foodplace` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `reservationurl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `pickup` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `reservationlodging` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `scalelodging` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          `accomcountlodging` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT '',
-                                          PRIMARY KEY (`id`),
-                                          UNIQUE KEY `content_id` (`content_id`),
-                                          KEY `idx_content_type` (`content_type_id`),
-                                          KEY `idx_area` (`area_code`,`sigungu_code`),
-                                          KEY `idx_title` (`title`(100))
-) ENGINE=InnoDB AUTO_INCREMENT=126 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
-
-
--- 7. 배치 작업 실행 로그 테이블
+-- 8. 배치 작업 실행 로그 테이블
 CREATE TABLE IF NOT EXISTS batch_execution_log (
                                                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                                    job_name VARCHAR(100) NOT NULL COMMENT '배치 작업명',
@@ -394,7 +410,7 @@ CREATE TABLE IF NOT EXISTS batch_execution_log (
                                                    INDEX idx_execution_date (execution_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='배치 실행 로그';
 
--- 8. API 호출 제한 관리 테이블 (Redis 백업용)
+-- 9. API 호출 제한 관리 테이블 (Redis 백업용)
 CREATE TABLE IF NOT EXISTS api_rate_limit_log (
                                                   id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                                   api_name VARCHAR(50) NOT NULL COMMENT 'API 명',
@@ -406,43 +422,3 @@ CREATE TABLE IF NOT EXISTS api_rate_limit_log (
                                                   UNIQUE KEY uk_api_date (api_name, call_date),
                                                   INDEX idx_call_date (call_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='API 호출 제한 로그';
-
-
-
-
-
-
-
-
-
-
-ALTER TABLE fetched_tourist_attractions ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_tourist_attractions ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_tourist_attractions ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_tourist_attractions ADD COLUMN google_reviews TEXT;
-
-ALTER TABLE fetched_restaurants ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_restaurants ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_restaurants ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_restaurants ADD COLUMN google_reviews TEXT;
-
-ALTER TABLE fetched_sports_recreation ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_sports_recreation ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_sports_recreation ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_sports_recreation ADD COLUMN google_reviews TEXT;
-
-
-ALTER TABLE fetched_cultural_facilities ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_cultural_facilities ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_cultural_facilities ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_cultural_facilities ADD COLUMN google_reviews TEXT;
-
-ALTER TABLE fetched_shopping ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_shopping ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_shopping ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_shopping ADD COLUMN google_reviews TEXT;
-
-ALTER TABLE fetched_accommodations ADD COLUMN google_place_id VARCHAR(255);
-ALTER TABLE fetched_accommodations ADD COLUMN google_rating DECIMAL(2,1);
-ALTER TABLE fetched_accommodations ADD COLUMN google_review_count INT;
-ALTER TABLE fetched_accommodations ADD COLUMN google_reviews TEXT;

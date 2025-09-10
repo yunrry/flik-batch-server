@@ -55,7 +55,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         (SELECT content_id, content_type_id, '38' as table_type FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
         UNION ALL
         (SELECT content_id, content_type_id, '39' as table_type FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '')
-        LIMIT 100
+        LIMIT 10000
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->

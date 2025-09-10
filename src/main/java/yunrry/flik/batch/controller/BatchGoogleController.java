@@ -172,7 +172,7 @@ public class BatchGoogleController {
             Map<String, Object> restaurants = getTableSummary("fetched_restaurants");
             Map<String, Object> accommodations = getTableSummary("fetched_accommodations");
             Map<String, Object> cultural = getTableSummary("fetched_cultural_facilities");
-            Map<String, Object> leisure = getTableSummary("fetched_leisure_sports");
+            Map<String, Object> leisure = getTableSummary("fetched_sports_recreation");
             Map<String, Object> shopping = getTableSummary("fetched_shopping");
 
             response.put("success", true);
