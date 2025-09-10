@@ -93,13 +93,6 @@ jobs:
           flavor: |
             suffix=-arm64
 
-      - name: Clear all caches before build
-        run: |
-          echo "Clearing all build caches..."
-          rm -rf ~/.gradle/caches || true
-          rm -rf ~/.gradle/wrapper || true
-          docker system prune -af --volumes || true
-
       - name: Build and push Flik Batch Server image
         uses: docker/build-push-action@v5
         with:
@@ -109,14 +102,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
-          pull: true  # 베이스 이미지도 강제로 최신으로
+          pull: true
           build-args: |
-            BUILDKIT_INLINE_CACHE=1
             COMMIT_SHA=${{ github.sha }}
             BUILD_TIME=${{ github.run_number }}
-            FORCE_REBUILD=true
           builder: ${{ steps.buildx.outputs.name }}
-        timeout-minutes: 30  # 타임아웃 추가
+        timeout-minutes: 30
 
       - name: Build Time End
         run: |
@@ -131,12 +122,12 @@ jobs:
           echo "${{ secrets.RASPBERRY_PI_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p 2022 ${{ env.RASPBERRY_PI_HOST }} >> ~/.ssh/known_hosts
-
+          
           # SSH 연결 및 배포 스크립트 실행
           ssh -i ~/.ssh/id_rsa -p 2022 -o ConnectTimeout=300 ${{ env.RASPBERRY_PI_USER }}@${{ env.RASPBERRY_PI_HOST }} << 'EOF'
           DEPLOY_START=$(date +%s)
           echo "Starting batch server deployment at $(date)"
-
+          
           # Clone or pull batch server repository
           if [ ! -d "/home/yoon/flik-batch-server" ]; then
             cd /home/yoon
@@ -147,10 +138,10 @@ jobs:
             echo "Pulling latest changes..."
             git pull origin main
           fi
-
+          
           cd /home/yoon/flik-batch-server
-
-          # .env 파일 생성 (구문 오류 수정)
+          
+          # .env 파일 생성
           echo "Creating .env file..."
           cat > .env << ENVEOF
           BUILD_TAG=${{ github.sha }}
@@ -160,29 +151,60 @@ jobs:
           MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
           MYSQL_USER=${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
           TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
           GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
           ENVEOF
-
+          
           # Docker 레지스트리 로그인
           echo "Logging into Docker registry..."
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-
-          # 이미지 pull 및 태그
+          
+          # 이미지 태그 설정 (metadata 출력과 일치)
           export IMAGE_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-          export IMAGE_TAG="${{ github.sha }}-arm64"
-          echo "Pulling new batch image: ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG"
-
-          # 이미지 존재 여부 확인 후 pull
-          if docker manifest inspect ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG > /dev/null 2>&1; then
-            docker pull ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG
-            docker tag ${{ env.REGISTRY }}/$IMAGE_LOWER:$IMAGE_TAG flik-batch:latest
-          else
-            echo "Error: Image not found in registry"
+          
+          # 사용 가능한 태그들 확인
+          AVAILABLE_TAGS=(
+            "main-${{ github.sha }}-arm64"
+            "${{ github.sha }}-arm64" 
+            "latest-arm64"
+            "main-arm64"
+          )
+          
+          PULLED_IMAGE=""
+          for tag in "${AVAILABLE_TAGS[@]}"; do
+            IMAGE_FULL="${{ env.REGISTRY }}/$IMAGE_LOWER:$tag"
+            echo "Trying to pull: $IMAGE_FULL"
+          
+            if docker manifest inspect "$IMAGE_FULL" > /dev/null 2>&1; then
+              echo "Found image: $IMAGE_FULL"
+              docker pull "$IMAGE_FULL"
+              docker tag "$IMAGE_FULL" flik-batch:latest
+              PULLED_IMAGE="$IMAGE_FULL"
+              break
+            else
+              echo "Image not found: $IMAGE_FULL"
+            fi
+          done
+          
+          if [ -z "$PULLED_IMAGE" ]; then
+            echo "Error: No valid image found for any of the attempted tags"
+            echo "Available tags were: ${AVAILABLE_TAGS[*]}"
             exit 1
           fi
-
+          
+          echo "Successfully pulled and tagged: $PULLED_IMAGE"
+          
+          # 네트워크 존재 확인
+          if ! docker network ls | grep -q goormthon-java_dormung-network; then
+            echo "Error: goormthon-java_dormung-network not found"
+            echo "Available networks:"
+            docker network ls
+            exit 1
+          fi
+          
           # 인프라 서비스 상태 확인
           echo "Checking infrastructure services..."
           if ! docker ps | grep -q mysql; then
@@ -193,76 +215,162 @@ jobs:
             echo "Warning: Redis container not running"
             exit 1
           fi
-
+          
           # Blue/Green deployment
           CURRENT_CONTAINER=$(docker ps --filter "name=batch-" --format "{{.Names}}" | head -1)
           if [ "$CURRENT_CONTAINER" = "batch-blue" ]; then
             NEW_ENV="green"
             OLD_ENV="blue"
+            NEW_PORT="8085"
           else
             NEW_ENV="blue"
             OLD_ENV="green"
+            NEW_PORT="8086"
           fi
-
-          echo "Deploying batch server to $NEW_ENV environment..."
-
+          
+          echo "Deploying batch server to $NEW_ENV environment (port: $NEW_PORT)..."
+          
+          # 기존 컨테이너 정리
+          if docker ps -q -f name=batch-$NEW_ENV | grep -q .; then
+            echo "Stopping existing batch-$NEW_ENV container..."
+            docker stop batch-$NEW_ENV || true
+            docker rm batch-$NEW_ENV || true
+          fi
+          
           # 새 환경 시작
-          docker compose --env-file .env --profile $NEW_ENV up -d batch-$NEW_ENV
-
+          docker run -d \
+            --name batch-$NEW_ENV \
+            --network goormthon-java_dormung-network \
+            -p $NEW_PORT:8081 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul \
+            -e SPRING_DATASOURCE_USERNAME=${{ secrets.MYSQL_USER }} \
+            -e SPRING_DATASOURCE_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+            -e SPRING_DATA_REDIS_HOST=redis \
+            -e SPRING_DATA_REDIS_PORT=6379 \
+            -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+            -e TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }} \
+            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -e DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }} \
+            -e GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }} \
+            -e BUILD_INFO=${{ github.sha }} \
+            -e DEPLOYMENT_ENV=$NEW_ENV \
+            --restart unless-stopped \
+            flik-batch:latest
+          
           # 헬스체크
           echo "Waiting for batch-$NEW_ENV to be healthy..."
           HEALTH_CHECK_COUNT=0
-          MAX_HEALTH_CHECKS=15
-
+          MAX_HEALTH_CHECKS=18
+          
           while [ $HEALTH_CHECK_COUNT -lt $MAX_HEALTH_CHECKS ]; do
-            if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
+            if curl -f http://localhost:$NEW_PORT/actuator/health > /dev/null 2>&1; then
               echo "batch-$NEW_ENV is healthy after $((HEALTH_CHECK_COUNT * 10)) seconds"
               break
             fi
             HEALTH_CHECK_COUNT=$((HEALTH_CHECK_COUNT + 1))
             if [ $HEALTH_CHECK_COUNT -eq $MAX_HEALTH_CHECKS ]; then
               echo "batch-$NEW_ENV failed to start after $((MAX_HEALTH_CHECKS * 10)) seconds"
-              docker logs batch-$NEW_ENV --tail 20
+              echo "Container logs:"
+              docker logs batch-$NEW_ENV --tail 30
               exit 1
             fi
             echo "Health check $HEALTH_CHECK_COUNT/$MAX_HEALTH_CHECKS..."
             sleep 10
           done
-
+          
           # 배치 서버 테스트
           echo "Testing batch deployment..."
-          sleep 3
-
-          TEST_RESULTS=""
-          if docker exec batch-$NEW_ENV curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
-            TEST_RESULTS="${TEST_RESULTS}health:ok "
+          sleep 5
+          
+          HEALTH_RESULT=""
+          
+          if curl -sf http://localhost:$NEW_PORT/actuator/health > /dev/null 2>&1; then
+            HEALTH_RESULT="ok"
           else
-            TEST_RESULTS="${TEST_RESULTS}health:fail "
+            HEALTH_RESULT="fail"
           fi
-
-          if echo "$TEST_RESULTS" | grep -q "fail"; then
-            echo "Batch deployment failed, test results: $TEST_RESULTS"
+                    
+          echo "Test results - Health: $HEALTH_RESULT"
+          
+          if [ "$HEALTH_RESULT" = "fail" ]; then
+            echo "Batch deployment failed - health check failed"
+            echo "Container logs:"
+            docker logs batch-$NEW_ENV --tail 50
+          
             echo "Rolling back..."
-            docker compose --env-file .env stop batch-$NEW_ENV
-            if [ "$OLD_ENV" != "" ] && [ "$(docker ps -q -f name=batch-$OLD_ENV)" = "" ]; then
-              echo "Restarting previous environment: batch-$OLD_ENV"
-              docker compose --env-file .env --profile $OLD_ENV up -d batch-$OLD_ENV
+            docker stop batch-$NEW_ENV || true
+            docker rm batch-$NEW_ENV || true
+          
+            if [ "$OLD_ENV" != "" ] && docker images | grep -q flik-batch; then
+              echo "Attempting to restart previous environment: batch-$OLD_ENV"
+              OLD_PORT=$([ "$OLD_ENV" = "blue" ] && echo "8086" || echo "8085")
+              docker run -d \
+                --name batch-$OLD_ENV \
+                --network goormthon-java_dormung-network \
+                -p $OLD_PORT:8081 \
+                -e SPRING_PROFILES_ACTIVE=prod \
+                -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul \
+                -e SPRING_DATASOURCE_USERNAME=${{ secrets.MYSQL_USER }} \
+                -e SPRING_DATASOURCE_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+                -e SPRING_DATA_REDIS_HOST=redis \
+                -e SPRING_DATA_REDIS_PORT=6379 \
+                -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+                -e TOURISM_API_SERVICE_KEY=${{ secrets.TOURISM_API_SERVICE_KEY }} \
+                -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+                -e DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }} \
+                -e GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }} \
+                --restart unless-stopped \
+                flik-batch:latest || echo "Failed to restart old environment"
             fi
             exit 1
           else
-            echo "Batch deployment successful, test results: $TEST_RESULTS"
-            echo "Stopping old environment ($OLD_ENV)..."
-            docker compose --env-file .env stop batch-$OLD_ENV
-
+            echo "Batch deployment successful!"
+          
+            # 이전 환경 정리
+            if [ "$OLD_ENV" != "" ] && docker ps -q -f name=batch-$OLD_ENV | grep -q .; then
+              echo "Stopping old environment: batch-$OLD_ENV"
+              docker stop batch-$OLD_ENV || true
+              docker rm batch-$OLD_ENV || true
+            fi
+          
             DEPLOY_END=$(date +%s)
             DEPLOY_DURATION=$((DEPLOY_END - DEPLOY_START))
-            echo "Batch Blue/Green deployment completed! Active: $NEW_ENV"
+            echo "Batch Blue/Green deployment completed!"
+            echo "Active environment: batch-$NEW_ENV (port: $NEW_PORT)"
             echo "Total deployment time: ${DEPLOY_DURATION} seconds ($((DEPLOY_DURATION/60)) minutes)"
-
-            echo "Cleaning up old images and containers..."
-            docker container prune -f --filter "label=com.docker.compose.service=batch-*" || true
-            docker images | grep flik-batch | grep -v latest | awk '{print $3}' | xargs docker rmi -f || true
-            docker system prune -f || true
+          
+            # 정리 작업
+            echo "Cleaning up unused Docker resources..."
+          
+            # 사용하지 않는 이미지 모두 삭제
+            echo "Removing unused images..."
+            docker image prune -af || true
+          
+            # dangling 이미지 삭제
+            docker images -f "dangling=true" -q | xargs -r docker rmi -f || true
+          
+            # flik-batch 관련 오래된 이미지 삭제 (latest 태그 제외)
+            docker images | grep -E "flik-batch|$IMAGE_LOWER" | grep -v "latest" | awk 'NR>2 {print $3}' | xargs -r docker rmi -f || true
+          
+            # 중지된 컨테이너 삭제
+            docker container prune -f || true
+          
+            # 사용하지 않는 네트워크 삭제
+            docker network prune -f || true
+          
+            # 사용하지 않는 볼륨 삭제 (주의: 데이터 볼륨 제외)
+            docker volume prune -f || true
+          
+            # 전체 시스템 정리 (최근 24시간 이전)
+            docker system prune -af --filter "until=24h" || true
+          
+            echo "Docker cleanup completed"
+          
+            # 디스크 사용량 확인
+            echo "Remaining disk usage:"
+            df -h / || true
+            docker system df || true
           fi
           EOF
 

@@ -4,9 +4,6 @@ services:
   batch-blue:
     profiles:
       - blue
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: flik-batch:latest
     container_name: batch-blue
     environment:
@@ -17,12 +14,12 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SERVER_PORT=8081
-      - JAVA_OPTS=-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200
       - BUILD_INFO=${BUILD_TAG:-latest}
       - DEPLOYMENT_ENV=blue
       - TOURISM_API_SERVICE_KEY=${TOURISM_API_SERVICE_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
     ports:
       - "8085:8081"
     networks:
@@ -39,9 +36,6 @@ services:
   batch-green:
     profiles:
       - green
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: flik-batch:latest
     container_name: batch-green
     environment:
@@ -52,12 +46,12 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SERVER_PORT=8081
-      - JAVA_OPTS=-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200
       - BUILD_INFO=${BUILD_TAG:-latest}
       - DEPLOYMENT_ENV=green
       - TOURISM_API_SERVICE_KEY=${TOURISM_API_SERVICE_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
     ports:
       - "8086:8081"
     networks:
