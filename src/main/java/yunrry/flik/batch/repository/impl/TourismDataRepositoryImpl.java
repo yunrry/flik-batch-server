@@ -42,20 +42,26 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     @Override
     public List<TourismRawData> findUnprocessedForDetail() {
         String sql = """
-        (SELECT content_id, content_type_id, '12' as table_type FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '14' as table_type FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '15' as table_type FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '28' as table_type FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '32' as table_type FROM fetched_accommodations WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '38' as table_type FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
-        UNION ALL
-        (SELECT content_id, content_type_id, '39' as table_type FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '')
-        LIMIT 10000
+        SELECT content_id, content_type_id
+        FROM (
+            -- 관광지와 음식점만 우선 처리 (500개씩)
+            (SELECT content_id, content_type_id, 1 as priority FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = '' LIMIT 500)
+            UNION ALL
+            (SELECT content_id, content_type_id, 2 as priority FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '' LIMIT 500)
+            UNION ALL
+            -- 나머지 테이블들은 나중에
+            (SELECT content_id, content_type_id, 3 as priority FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = '')
+            UNION ALL
+            (SELECT content_id, content_type_id, 4 as priority FROM fetched_accommodations WHERE usetime IS NULL OR usetime = '')
+            UNION ALL
+            (SELECT content_id, content_type_id, 5 as priority FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
+            UNION ALL
+            (SELECT content_id, content_type_id, 6 as priority FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = '')
+            UNION ALL
+            (SELECT content_id, content_type_id, 7 as priority FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = '')
+        ) AS combined
+        ORDER BY priority
+        LIMIT 1000
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
