@@ -11,6 +11,7 @@ import yunrry.flik.batch.repository.TourismDataRepository;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,6 +74,65 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     }
 
     @Override
+    public List<TourismRawData> findUnprocessedForLabelDetail() {
+        String sql = """
+    SELECT content_id, content_type_id
+    FROM (
+        (SELECT content_id, content_type_id, 1 as priority FROM fetched_tourist_attractions WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 2 as priority FROM fetched_restaurants WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 3 as priority FROM fetched_accommodations WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 4 as priority FROM fetched_cultural_facilities WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 5 as priority FROM fetched_shopping WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 6 as priority FROM fetched_festivals_events WHERE label_depth1 IS NULL OR label_depth1 = '')
+        UNION ALL
+        (SELECT content_id, content_type_id, 7 as priority FROM fetched_sports_recreation WHERE label_depth1 IS NULL OR label_depth1 = '')
+    ) AS combined
+    ORDER BY priority, content_id
+    LIMIT 1000
+    """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                TourismRawData.builder()
+                        .contentId(rs.getString("content_id"))
+                        .contentTypeId(rs.getString("content_type_id"))
+                        .build()
+        );
+    }
+
+    @Override
+    public void updateLabelDetailData(TourismRawData data) {
+        String tableName = getTableName(data.getContentTypeId());
+
+        String sql = String.format("""
+        UPDATE %s SET 
+            label_depth1 = ?, 
+            label_depth2 = ?, 
+            label_depth3 = ?, 
+            overview = ?,
+            cat1 = ?,
+            cat2 = ?,
+            cat3 = ?,
+            updated_at = CURRENT_TIMESTAMP 
+        WHERE content_id = ?
+        """, tableName);
+
+        jdbcTemplate.update(sql,
+                data.getLabelDepth1(),
+                data.getLabelDepth2(),
+                data.getLabelDepth3(),
+                data.getOverview(),
+                data.getCat1(),
+                data.getCat2(),
+                data.getCat3(),
+                data.getContentId());
+    }
+
+    @Override
     public void markAsProcessed(String contentId) {
         // 각 테이블에서 해당 content_id의 updated_at 갱신
         String[] tables = {
@@ -87,6 +147,42 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
                     contentId
             );
         }
+    }
+
+    @Override
+    public Map<String, String> findLabelNames(String code1, String code2, String code3) {
+        Map<String, String> result = new HashMap<>();
+
+        try {
+            // depth1 조회
+            if (code1 != null && !code1.isEmpty()) {
+                String sql1 = "SELECT name FROM label WHERE code = ? AND depth = 1";
+                List<String> names1 = jdbcTemplate.queryForList(sql1, String.class, code1);
+                result.put("depth1", names1.isEmpty() ? "" : names1.get(0));
+            }
+
+            // depth2 조회
+            if (code2 != null && !code2.isEmpty()) {
+                String sql2 = "SELECT name FROM label WHERE code = ? AND depth = 2";
+                List<String> names2 = jdbcTemplate.queryForList(sql2, String.class, code2);
+                result.put("depth2", names2.isEmpty() ? "" : names2.get(0));
+            }
+
+            // depth3 조회
+            if (code3 != null && !code3.isEmpty()) {
+                String sql3 = "SELECT name FROM label WHERE code = ? AND depth = 3";
+                List<String> names3 = jdbcTemplate.queryForList(sql3, String.class, code3);
+                result.put("depth3", names3.isEmpty() ? "" : names3.get(0));
+            }
+
+        } catch (Exception e) {
+            log.error("Error finding label names for codes: {}, {}, {}", code1, code2, code3, e);
+            result.put("depth1", "");
+            result.put("depth2", "");
+            result.put("depth3", "");
+        }
+
+        return result;
     }
 
     private String getTableName(String contentTypeId) {

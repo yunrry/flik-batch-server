@@ -28,6 +28,9 @@ public class TourismRawData {
     private String modifiedTime;
     private String tel;
     private String zipcode;
+    private String labelDepth1;
+    private String labelDepth2;
+    private String labelDepth3;
     private String overview;
     private String source;
     private LocalDateTime collectedAt;
@@ -41,6 +44,7 @@ public class TourismRawData {
     private String chkbabycarriage;
     private String chkpet;
     private String chkcreditcard;
+
 
     // 원본 데이터
     private Map<String, Object> rawData;
