@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -206,6 +207,101 @@ public class ApiService {
         } catch (Exception e) {
             log.error("Error converting JsonNode to Map", e);
             return Collections.emptyMap();
+        }
+    }
+
+
+
+
+    public TourismRawData fetchDetailCommon(String contentId) {
+        Map<String, Object> params = Map.of(
+                "serviceKey", serviceKey,
+                "contentId", contentId,
+                "MobileOS", "WEB",
+                "MobileApp", "Flik",
+                "_type", "json"
+        );
+
+        try {
+            String response = webClient.get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.path("/detailCommon2");
+                        params.forEach(uriBuilder::queryParam);
+                        return uriBuilder.build();
+                    })
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+
+            return parseDetailCommonResponse(response, contentId);
+
+        } catch (WebClientResponseException e) {
+            log.error("API call failed for contentId: {}, status={}, body={}",
+                    contentId, e.getStatusCode(), e.getResponseBodyAsString());
+            return null;
+        } catch (Exception e) {
+            log.error("Error fetching detail common for contentId: {}", contentId, e);
+            return null;
+        }
+    }
+
+    private String buildDetailCommonUrl(String contentId) {
+        String url = String.format(
+                "%s/detailCommon2?serviceKey=%s&contentId=%s&MobileOS=ETC&MobileApp=flik&_type=json",
+                baseUrl, serviceKey, contentId
+        );
+        log.debug("Built detail common URL: {}", url);
+        return url;
+    }
+
+    private TourismRawData parseDetailCommonResponse(String response, String contentId) {
+        try {
+            if (response == null || response.trim().isEmpty()) {
+                log.warn("Empty response for contentId: {}", contentId);
+                return null;
+            }
+
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode header = root.path("response").path("header");
+
+            if (!"0000".equals(header.path("resultCode").asText())) {
+                log.warn("API error for contentId: {}, message: {}",
+                        contentId, header.path("resultMsg").asText());
+                return null;
+            }
+
+            JsonNode items = root.path("response").path("body").path("items");
+            if (items.isMissingNode() || !items.has("item")) {
+                log.warn("No items found for contentId: {}", contentId);
+                return null;
+            }
+
+            JsonNode item = items.path("item");
+            if (item.isArray() && item.size() > 0) {
+                item = item.get(0);
+            }
+
+            // 분류 코드 추출
+            String lclsSystm1 = getTextValue(item, "lclsSystm1");
+            String lclsSystm2 = getTextValue(item, "lclsSystm2");
+            String lclsSystm3 = getTextValue(item, "lclsSystm3");
+
+            // DB에서 분류명 조회
+            Map<String, String> labelNames = tourismDataRepository.findLabelNames(lclsSystm1, lclsSystm2, lclsSystm3);
+
+            return TourismRawData.builder()
+                    .contentId(contentId)
+                    .contentTypeId(getTextValue(item, "contenttypeid"))
+                    .overview(getTextValue(item, "overview"))
+                    .labelDepth1(labelNames.get("depth1"))
+                    .labelDepth2(labelNames.get("depth2"))
+                    .labelDepth3(labelNames.get("depth3"))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error parsing detail common response for contentId: {}", contentId, e);
+            return null;
         }
     }
 }
