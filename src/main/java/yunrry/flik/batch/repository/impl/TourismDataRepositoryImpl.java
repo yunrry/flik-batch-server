@@ -69,6 +69,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
                 TourismRawData.builder()
                         .contentId(rs.getString("content_id"))
                         .contentTypeId(rs.getString("content_type_id"))
+                        .title(rs.getString("title"))
                         .build()
         );
     }
@@ -76,21 +77,21 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     @Override
     public List<TourismRawData> findUnprocessedForLabelDetail() {
         String sql = """
-    SELECT content_id, content_type_id
+    SELECT content_id, content_type_id, title
     FROM (
-        (SELECT content_id, content_type_id, 1 as priority FROM fetched_tourist_attractions WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 1 as priority FROM fetched_tourist_attractions WHERE label_depth1 IS NULL OR label_depth1 = ''  LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 2 as priority FROM fetched_restaurants WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 2 as priority FROM fetched_restaurants WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 3 as priority FROM fetched_accommodations WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 3 as priority FROM fetched_accommodations WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 4 as priority FROM fetched_cultural_facilities WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 4 as priority FROM fetched_cultural_facilities WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 5 as priority FROM fetched_shopping WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 5 as priority FROM fetched_shopping WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 6 as priority FROM fetched_festivals_events WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 6 as priority FROM fetched_festivals_events WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
         UNION ALL
-        (SELECT content_id, content_type_id, 7 as priority FROM fetched_sports_recreation WHERE label_depth1 IS NULL OR label_depth1 = '')
+        (SELECT content_id, content_type_id, title, 7 as priority FROM fetched_sports_recreation WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
     ) AS combined
     ORDER BY priority, content_id
     LIMIT 1000
@@ -100,6 +101,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
                 TourismRawData.builder()
                         .contentId(rs.getString("content_id"))
                         .contentTypeId(rs.getString("content_type_id"))
+                        .title(rs.getString("title"))
                         .build()
         );
     }
