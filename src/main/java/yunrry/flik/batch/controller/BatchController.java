@@ -26,6 +26,7 @@ public class BatchController {
     private final JobRepository jobRepository;
     private final RateLimitService rateLimitService;
     private final Job detailIntroOnlyJob;
+    private final Job labelDetailJob;
 
     @GetMapping("/test")
     public String test() {
@@ -207,6 +208,36 @@ public class BatchController {
             response.put("success", false);
             response.put("message", "Failed to get status: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+
+
+    @PostMapping("/label-detail")
+    public ResponseEntity<Map<String, Object>> runLabelDetailJob() {
+        try {
+            // 고유한 JobParameters 생성 (중복 실행 방지)
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("timestamp", LocalDateTime.now().toString())
+                    .toJobParameters();
+
+            // Job 실행
+            var jobExecution = jobLauncher.run(labelDetailJob, jobParameters);
+
+            log.info("Label detail job started with execution id: {}", jobExecution.getId());
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "started",
+                    "executionId", jobExecution.getId(),
+                    "message", "Label detail job has been started successfully"
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to start label detail job", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "error",
+                    "message", "Failed to start label detail job: " + e.getMessage()
+            ));
         }
     }
 

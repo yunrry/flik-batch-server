@@ -9,7 +9,7 @@ import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.repository.TourismDataRepository;
 
 @RequiredArgsConstructor
-@Component
+@Component("labelDetailWriter")
 @Slf4j
 public class LabelDetailWriter implements ItemWriter<TourismRawData> {
 

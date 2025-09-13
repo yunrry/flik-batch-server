@@ -12,10 +12,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.job.GooglePlacesEnrichmentJob;
+import yunrry.flik.batch.job.processor.LabelDetailProcessor;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.LabelDetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
+import yunrry.flik.batch.job.writer.LabelDetailWriter;
 import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
 
@@ -24,8 +26,8 @@ import yunrry.flik.batch.listener.BatchJobListener;
 public class BatchConfig {
 
     private final LabelDetailItemReader labelDetailItemReader;
-    private final TourismDataProcessor labelDetailProcessor;
-    private final TourismDataWriter labelDetailWriter;
+    private final LabelDetailProcessor labelDetailProcessor;
+    private final LabelDetailWriter labelDetailWriter;
     private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
