@@ -40,9 +40,10 @@ public class BatchConfig {
     public Job tourismDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(detailIntroStep(jobRepository, transactionManager))//임시로 detail intro step만 실행 (나중에 지울것)
+                .start(areaBasedListStep(jobRepository, transactionManager))
+                .next(detailIntroStep(jobRepository, transactionManager))//임시로 detail intro step만 실행 (나중에 지울것)
                 .next(labelDetailStep(jobRepository, transactionManager))
-//                .start(areaBasedListStep(jobRepository, transactionManager))
+
 //                .next(detailIntroStep(jobRepository, transactionManager))
 //                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
 //                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
