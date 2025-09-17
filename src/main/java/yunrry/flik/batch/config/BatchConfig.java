@@ -28,10 +28,13 @@ public class BatchConfig {
     private final LabelDetailItemReader labelDetailItemReader;
     private final LabelDetailProcessor labelDetailProcessor;
     private final LabelDetailWriter labelDetailWriter;
+
     private final DetailItemReader detailItemReader;
+
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
     private final TourismDataWriter tourismDataWriter;
+
     private final BatchJobListener batchJobListener;
 
     private final GooglePlacesEnrichmentJob googlePlacesEnrichmentJob;

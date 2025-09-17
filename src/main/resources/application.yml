@@ -87,7 +87,7 @@ jwt:
 # rate-limit 설정 완성
 rate-limit:
   tourism-api:
-    daily-limit: 1000
+    daily-limit: 600
     reset-hour: 0  # 자정 리셋
 
 

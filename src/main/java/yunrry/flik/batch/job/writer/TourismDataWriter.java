@@ -45,6 +45,7 @@ public class TourismDataWriter implements ItemWriter<TourismRawData> {
                 try {
                     for (TourismRawData item : chunk) {
                         tourismDataRepository.updateDetailData(item);
+                        log.debug("Updated item detail: contentId={}, title={}", item.getContentId(), item.getTitle());
                     }
                     log.info("Updated {} tourism detail data items", chunk.size());
                 } catch (Exception e) {
