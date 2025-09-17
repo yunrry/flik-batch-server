@@ -42,34 +42,34 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
 
     @Override
     public List<TourismRawData> findUnprocessedForDetail() {
+
         String sql = """
         SELECT content_id, content_type_id
         FROM (
             -- 관광지와 음식점만 우선 처리 (500개씩)
-            (SELECT content_id, content_type_id, 1 as priority FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = '' LIMIT 500)
+            (SELECT content_id, content_type_id, 1 as priority FROM fetched_tourist_attractions WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
             UNION ALL
-            (SELECT content_id, content_type_id, 2 as priority FROM fetched_restaurants WHERE usetime IS NULL OR usetime = '' LIMIT 500)
+            (SELECT content_id, content_type_id, 2 as priority FROM fetched_restaurants WHERE usetime IS NULL OR usetime = ''  LIMIT 60 )
             UNION ALL
             -- 나머지 테이블들은 나중에
-            (SELECT content_id, content_type_id, 3 as priority FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = '')
+            (SELECT content_id, content_type_id, 3 as priority FROM fetched_cultural_facilities WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
             UNION ALL
-            (SELECT content_id, content_type_id, 4 as priority FROM fetched_accommodations WHERE usetime IS NULL OR usetime = '')
+            (SELECT content_id, content_type_id, 4 as priority FROM fetched_accommodations WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
             UNION ALL
-            (SELECT content_id, content_type_id, 5 as priority FROM fetched_shopping WHERE usetime IS NULL OR usetime = '')
+            (SELECT content_id, content_type_id, 5 as priority FROM fetched_shopping WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
             UNION ALL
-            (SELECT content_id, content_type_id, 6 as priority FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = '')
+            (SELECT content_id, content_type_id, 6 as priority FROM fetched_festivals_events WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
             UNION ALL
-            (SELECT content_id, content_type_id, 7 as priority FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = '')
+            (SELECT content_id, content_type_id, 7 as priority FROM fetched_sports_recreation WHERE usetime IS NULL OR usetime = ''  LIMIT 60)
         ) AS combined
         ORDER BY priority
-        LIMIT 1000
+        LIMIT 360
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 TourismRawData.builder()
                         .contentId(rs.getString("content_id"))
                         .contentTypeId(rs.getString("content_type_id"))
-                        .title(rs.getString("title"))
                         .build()
         );
     }
@@ -79,22 +79,22 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         String sql = """
     SELECT content_id, content_type_id, title
     FROM (
-        (SELECT content_id, content_type_id, title, 1 as priority FROM fetched_tourist_attractions WHERE label_depth1 IS NULL OR label_depth1 = ''  LIMIT 160)
+        (SELECT content_id, content_type_id, title, 1 as priority FROM fetched_tourist_attractions WHERE label_depth1 IS NULL OR label_depth1 = ''  LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 2 as priority FROM fetched_restaurants WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 2 as priority FROM fetched_restaurants WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 3 as priority FROM fetched_accommodations WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 3 as priority FROM fetched_accommodations WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 4 as priority FROM fetched_cultural_facilities WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 4 as priority FROM fetched_cultural_facilities WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 5 as priority FROM fetched_shopping WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 5 as priority FROM fetched_shopping WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 6 as priority FROM fetched_festivals_events WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 6 as priority FROM fetched_festivals_events WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
         UNION ALL
-        (SELECT content_id, content_type_id, title, 7 as priority FROM fetched_sports_recreation WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 160)
+        (SELECT content_id, content_type_id, title, 7 as priority FROM fetched_sports_recreation WHERE label_depth1 IS NULL OR label_depth1 = '' LIMIT 60)
     ) AS combined
     ORDER BY priority, content_id
-    LIMIT 1000
+    LIMIT 360
     """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->

@@ -17,7 +17,7 @@ public class RateLimitService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    @Value("${rate-limit.tourism-api.daily-limit:1000}")
+    @Value("${rate-limit.tourism-api.daily-limit:600}")
     private int DAILY_LIMIT;
 
     public void checkRateLimit() throws RateLimitExceededException {
