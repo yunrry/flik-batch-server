@@ -42,8 +42,9 @@ public class ApiService {
                 "MobileApp", "Flik",
                 "_type", "json",
                 "arrange", "R",  // 생성일순
+                "areaCode", "39"  // 제주
 //                "areaCode", "1"  // 서울
-                "areaCode", "6"  // 부산
+//                "areaCode", "6"  // 부산
         );
 
         try {
