@@ -9,6 +9,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.service.RateLimitService;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class BatchController {
     private final RateLimitService rateLimitService;
     private final Job detailIntroOnlyJob;
     private final Job labelDetailJob;
+    private final DetailItemReader detailItemReader;
 
     @GetMapping("/test")
     public String test() {
@@ -151,11 +153,16 @@ public class BatchController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // *** Reader 상태 초기화 ***
+            detailItemReader.reset();
+
+            // JobParameters 생성
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
                     .addString("triggerType", "MANUAL_DETAIL_INTRO")
                     .toJobParameters();
 
+            // 배치 Job 실행
             JobExecution jobExecution = jobLauncher.run(detailIntroOnlyJob, jobParameters);
 
             response.put("success", true);
@@ -174,6 +181,7 @@ public class BatchController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
 
     @GetMapping("/tourism/detail-intro/status/{jobExecutionId}")
     public ResponseEntity<Map<String, Object>> getDetailIntroStatus(@PathVariable Long jobExecutionId) {

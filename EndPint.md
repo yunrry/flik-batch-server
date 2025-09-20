@@ -119,3 +119,16 @@ curl -X GET http://localhost:8081/api/batch/google-places/summary \
   }
 }
 ```
+
+
+```bash
+curl -X POST http://localhost:8081/api/batch/tourism/run \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
+
+```bash
+curl -X POST http://localhost:8081/api/batch/tourism/detail-intro/run \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
