@@ -28,6 +28,9 @@ public class LabelDetailItemReader implements ItemReader<TourismRawData>, StepEx
     @Override
     public void beforeStep(StepExecution stepExecution) {
         log.info("LabelDetailItemReader starting. Max items: {}", MAX_ITEMS);
+
+        currentIndex = 0;
+
         data = tourismDataRepository.findUnprocessedForLabelDetail();
         if (data.size() > MAX_ITEMS) {
             data = data.subList(0, MAX_ITEMS);
