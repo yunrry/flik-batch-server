@@ -6,6 +6,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.mapper.FieldMapper;
+import yunrry.flik.batch.service.ApiSecondService;
 import yunrry.flik.batch.service.ApiService;
 
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class InfoDetailProcessor implements ItemProcessor<TourismRawData, TourismRawData> {
 
-    private final ApiService apiService;
+    private final ApiSecondService apiService;
     private final FieldMapper fieldMapper;
     private int processedCount = 0;
     private static final int MAX_PROCESS_COUNT = 1000;
