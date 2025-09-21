@@ -340,7 +340,7 @@ jobs:
 
       - name: Verify Batch deployment
         run: |
-          ssh -i ~/.ssh/id_rsa -p 2022 ${{ env.RASPBERRY_PI_USER }}@${{ env.RASPBERRY_PI_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -p 2022 ${{ env.RASPBERRY_PI_USER }}@${{ env.RASPBERRY_PI_HOST }} << EOF
           echo "Final verification of Batch endpoints..."
           sleep 5
 
