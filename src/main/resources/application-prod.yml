@@ -87,7 +87,7 @@ jwt:
 # rate-limit 설정 완성
 rate-limit:
   tourism-api:
-    daily-limit: 1000
+    daily-limit: 100000
     reset-hour: 0  # 자정 리셋
 
 
@@ -101,6 +101,7 @@ scheduler:
 tourism-api:
   base-url: "http://apis.data.go.kr/B551011/KorService2"
   service-key: ${TOURISM_API_SERVICE_KEY}
+  service-key2: ${TOURISM_API_SERVICE_KEY_2}
   timeout: 30000
   retry-attempts: 3
 

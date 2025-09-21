@@ -12,11 +12,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.job.GooglePlacesEnrichmentJob;
+import yunrry.flik.batch.job.processor.InfoDetailProcessor;
 import yunrry.flik.batch.job.processor.LabelDetailProcessor;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.LabelDetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
+import yunrry.flik.batch.job.writer.InfoDetailWriter;
 import yunrry.flik.batch.job.writer.LabelDetailWriter;
 import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
@@ -30,6 +32,8 @@ public class BatchConfig {
     private final LabelDetailWriter labelDetailWriter;
 
     private final DetailItemReader detailItemReader;
+    private final InfoDetailProcessor infoDetailProcessor;
+    private final InfoDetailWriter infoDetailWriter;
 
     private final TourismApiItemReader tourismApiItemReader;
     private final TourismDataProcessor tourismDataProcessor;
@@ -78,10 +82,28 @@ public class BatchConfig {
     }
 
     @Bean
+    public Step detailIntroStep2(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("detailIntroStep", jobRepository)
+                .<TourismRawData, TourismRawData>chunk(10, transactionManager)
+                .reader(detailItemReader)
+                .processor(infoDetailProcessor)
+                .writer(infoDetailWriter)
+                .build();
+    }
+
+    @Bean
     public Job detailIntroOnlyJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("detailIntroOnlyJob", jobRepository)
                 .listener(batchJobListener)
                 .start(detailIntroStep(jobRepository, transactionManager))
+                .build();
+    }
+
+    @Bean
+    public Job detailIntroOnlyJob2(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new JobBuilder("detailIntroOnlyJob2", jobRepository)
+                .listener(batchJobListener)
+                .start(detailIntroStep2(jobRepository, transactionManager))
                 .build();
     }
 
@@ -100,6 +122,24 @@ public class BatchConfig {
         return new JobBuilder("labelDetailJob", jobRepository)
                 .listener(batchJobListener)
                 .start(labelDetailStep(jobRepository, transactionManager))
+                .build();
+    }
+
+    @Bean
+    public Step labelDetailStep2(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("labelDetailStep2", jobRepository)
+                .<TourismRawData, TourismRawData>chunk(10, transactionManager)
+                .reader(labelDetailItemReader)
+                .processor(labelDetailProcessor.labelDetailProcessor2())
+                .writer(labelDetailWriter)
+                .build();
+    }
+
+    @Bean
+    public Job labelDetailJob2(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new JobBuilder("labelDetailJob2", jobRepository)
+                .listener(batchJobListener)
+                .start(labelDetailStep2(jobRepository, transactionManager))
                 .build();
     }
 }

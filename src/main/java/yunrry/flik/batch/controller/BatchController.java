@@ -27,7 +27,9 @@ public class BatchController {
     private final JobRepository jobRepository;
     private final RateLimitService rateLimitService;
     private final Job detailIntroOnlyJob;
+    private final Job detailIntroOnlyJob2;
     private final Job labelDetailJob;
+    private final Job labelDetailJob2;
     private final DetailItemReader detailItemReader;
 
     @GetMapping("/test")
@@ -182,6 +184,48 @@ public class BatchController {
         }
     }
 
+    @PostMapping("/tourism/detail-intro2/run")
+    public ResponseEntity<Map<String, Object>> runDetailIntroOnly2() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // API 제한 확인
+//            if (!rateLimitService.canMakeRequest()) {
+//                response.put("success", false);
+//                response.put("message", "API rate limit exceeded");
+//                response.put("remainingCount", rateLimitService.getRemainingCount());
+//                return ResponseEntity.badRequest().body(response);
+//            }
+
+            // *** Reader 상태 초기화 ***
+            detailItemReader.reset();
+
+            // JobParameters 생성
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("executionTime", LocalDateTime.now().toString())
+                    .addString("triggerType", "MANUAL_DETAIL_INTRO")
+                    .toJobParameters();
+
+            // 배치 Job 실행
+            JobExecution jobExecution = jobLauncher.run(detailIntroOnlyJob2, jobParameters);
+
+            response.put("success", true);
+            response.put("jobExecutionId", jobExecution.getId());
+            response.put("status", jobExecution.getStatus().toString());
+            response.put("startTime", jobExecution.getStartTime());
+            response.put("apiCallsRemaining", rateLimitService.getRemainingCount());
+
+            log.info("Detail intro batch job started manually - Execution ID: {}", jobExecution.getId());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Failed to start detail intro batch job", e);
+            response.put("success", false);
+            response.put("message", "Failed to start detail intro job: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
 
     @GetMapping("/tourism/detail-intro/status/{jobExecutionId}")
     public ResponseEntity<Map<String, Object>> getDetailIntroStatus(@PathVariable Long jobExecutionId) {
@@ -212,7 +256,7 @@ public class BatchController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Failed to get detail intro batch status", e);
+            log.error("Failed to get detail intro2 batch status", e);
             response.put("success", false);
             response.put("message", "Failed to get status: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -242,6 +286,34 @@ public class BatchController {
 
         } catch (Exception e) {
             log.error("Failed to start label detail job", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "error",
+                    "message", "Failed to start label detail job: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/label-detail2")
+    public ResponseEntity<Map<String, Object>> runLabelDetailJob2() {
+        try {
+            // 고유한 JobParameters 생성 (중복 실행 방지)
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("timestamp", LocalDateTime.now().toString())
+                    .toJobParameters();
+
+            // Job 실행
+            var jobExecution = jobLauncher.run(labelDetailJob2, jobParameters);
+
+            log.info("Label detail job2 started with execution id: {}", jobExecution.getId());
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "started",
+                    "executionId", jobExecution.getId(),
+                    "message", "Label detail job2 has been started successfully"
+            ));
+
+        } catch (Exception e) {
+            log.error("Failed to start label detail2 job", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "status", "error",
                     "message", "Failed to start label detail job: " + e.getMessage()

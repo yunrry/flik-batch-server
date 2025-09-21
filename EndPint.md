@@ -132,3 +132,20 @@ curl -X POST http://localhost:8081/api/batch/tourism/detail-intro/run \
   -H "Content-Type: application/json" \
   -H "Accept: application/json"
 ```
+
+```bash
+curl -X POST http://localhost:8086/api/batch/tourism/detail-intro/run \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
+
+```bash
+curl -X POST http://localhost:8081/api/batch/label-detail \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
+```bash
+curl -X POST http://localhost:8086/api/batch/label-detail \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
