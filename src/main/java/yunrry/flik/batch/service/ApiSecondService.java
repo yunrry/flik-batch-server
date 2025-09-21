@@ -28,7 +28,7 @@ public class ApiSecondService {
     @Value("${tourism-api.base-url}")
     private String baseUrl;
 
-    @Value("${tourism-api.service-key2}")
+    @Value("${tourism-api.service-second-key}")
     private String serviceKey;
 
     private final WebClient webClient = WebClient.builder()
