@@ -33,18 +33,17 @@ public class ApiService {
             .baseUrl("http://apis.data.go.kr/B551011/KorService2")
             .build();
 
-    public List<TourismRawData> fetchAreaBasedList(int pageNo) {
+    // ApiService.java
+    public List<TourismRawData> fetchAreaBasedList(int pageNo, String areaCode, String serviceKeyParam) {
         Map<String, Object> params = Map.of(
-                "serviceKey", serviceKey,
+                "serviceKey", serviceKeyParam,
                 "numOfRows", 100,
                 "pageNo", pageNo,
                 "MobileOS", "WEB",
                 "MobileApp", "Flik",
                 "_type", "json",
-                "arrange", "R",  // 생성일순
-                "areaCode", "39"  // 제주
-//                "areaCode", "1"  // 서울
-//                "areaCode", "6"  // 부산
+                "arrange", "R",
+                "areaCode", areaCode
         );
 
         try {
@@ -60,14 +59,12 @@ public class ApiService {
                     .block();
 
             return parseAreaBasedResponse(response);
-        } catch (WebClientResponseException e) {
-            log.error("API call failed: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
-            return Collections.emptyList();
         } catch (Exception e) {
             log.error("Error fetching area based list", e);
             return Collections.emptyList();
         }
     }
+
 
     public Map<String, Object> fetchDetailIntro(String contentId, String contentTypeId) {
         Map<String, Object> params = Map.of(

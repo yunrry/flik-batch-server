@@ -183,3 +183,7 @@ curl -X POST http://localhost:8080/api/migration/sports \
 # 관광지
 curl -X POST http://localhost:8080/api/migration/tourist \
 -H "Content-Type: application/json"
+
+curl -X POST "http://localhost:8081/api/batch/tourism/run?areaCode=34&serviceKey=YOUR_SERVICE_KEY" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json"

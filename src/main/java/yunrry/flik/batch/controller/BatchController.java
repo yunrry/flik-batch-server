@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import yunrry.flik.batch.job.reader.DetailItemReader;
+import yunrry.flik.batch.job.reader.TourismApiItemReader;
 import yunrry.flik.batch.service.RateLimitService;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ public class BatchController {
     private final Job labelDetailJob;
     private final Job labelDetailJob2;
     private final DetailItemReader detailItemReader;
+    private final TourismApiItemReader tourismApiItemReader;
 
     @GetMapping("/test")
     public String test() {
@@ -38,17 +40,23 @@ public class BatchController {
     }
 
     @PostMapping("/tourism/run")
-    public ResponseEntity<Map<String, Object>> runTourismBatch() {
+    public ResponseEntity<Map<String, Object>> runTourismBatch(
+            @RequestParam String areaCode,
+            @RequestParam String serviceKey) {
+
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // API 제한 확인
             if (!rateLimitService.canMakeRequest()) {
                 response.put("success", false);
                 response.put("message", "API rate limit exceeded");
                 response.put("remainingCount", rateLimitService.getRemainingCount());
                 return ResponseEntity.badRequest().body(response);
             }
+
+            // Reader에 지역코드와 서비스키 설정
+            tourismApiItemReader.setAreaCode(areaCode);
+            tourismApiItemReader.setServiceKey(serviceKey);
 
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
@@ -63,7 +71,6 @@ public class BatchController {
             response.put("startTime", jobExecution.getStartTime());
             response.put("apiCallsRemaining", rateLimitService.getRemainingCount());
 
-            log.info("Tourism batch job started manually - Execution ID: {}", jobExecution.getId());
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -73,6 +80,7 @@ public class BatchController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
 
     @GetMapping("/tourism/status/{jobExecutionId}")
     public ResponseEntity<Map<String, Object>> getBatchStatus(@PathVariable Long jobExecutionId) {
