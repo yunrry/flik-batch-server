@@ -7,6 +7,7 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemReader;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.exception.RateLimitExceededException;
@@ -27,31 +28,44 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
     private List<TourismRawData> currentBatch;
     private AtomicInteger currentIndex = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(1);
-    private boolean isDetailMode = false;
     private StepExecution stepExecution;
 
+    private String currentAreaCode = "39"; // 기본 제주
+
+    @Value("${tourism-api.service-key}")
+    private String serviceKey;      // 외부에서 주입받을 key
+
+    public void setAreaCode(String areaCode) {
+        if (!areaCode.equals(this.currentAreaCode)) {
+            this.currentAreaCode = areaCode;
+            this.currentPage.set(1);
+            this.currentBatch = null;
+            this.currentIndex.set(0);
+            log.info("Area code changed to {}, resetting pagination", areaCode);
+        }
+    }
+
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
+        log.info("Service key set externally");
+    }
 
     @BeforeStep
     public void beforeStep(StepExecution stepExecution) {
         this.stepExecution = stepExecution;
-
-        // 이전 실행에서 중단된 페이지 복구
-        JobExecution jobExecution = stepExecution.getJobExecution();
-        ExecutionContext context = jobExecution.getExecutionContext();
-
-        if (context.containsKey("lastPage")) {
-            int lastPage = context.getInt("lastPage");
-            currentPage.set(lastPage + 1);
-            log.info("Resuming from page: {}", currentPage.get());
-        }
+        ExecutionContext context = stepExecution.getJobExecution().getExecutionContext();
+        String key = "lastPage_" + currentAreaCode;
+        int lastPage = context.getInt(key, 0);
+        currentPage.set(lastPage + 1);
+        log.info("Resuming from page {} for area {}", currentPage.get(), currentAreaCode);
     }
 
+    @Override
     public TourismRawData read() throws Exception {
         try {
             rateLimitService.checkRateLimit();
         } catch (RateLimitExceededException e) {
             log.warn("Rate limit exceeded, stopping batch: {}", e.getMessage());
-            // 배치 정상 종료 처리
             return null;
         }
 
@@ -68,11 +82,10 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
 
     private void fetchNextBatch() {
         try {
-            currentBatch = apiService.fetchAreaBasedList(currentPage.get());
+            currentBatch = apiService.fetchAreaBasedList(currentPage.get(), currentAreaCode, serviceKey);
             currentIndex.set(0);
 
             if (currentBatch != null && !currentBatch.isEmpty()) {
-                // 성공적으로 페이지 처리 시 상태 저장
                 savePageState();
                 currentPage.incrementAndGet();
             }
@@ -84,10 +97,10 @@ public class TourismApiItemReader implements ItemReader<TourismRawData> {
 
     private void savePageState() {
         if (stepExecution != null) {
-            JobExecution jobExecution = stepExecution.getJobExecution();
-            ExecutionContext context = jobExecution.getExecutionContext();
-            context.putInt("lastPage", currentPage.get());
-            log.debug("Saved page state: {}", currentPage.get());
+            ExecutionContext context = stepExecution.getJobExecution().getExecutionContext();
+            String key = "lastPage_" + currentAreaCode;
+            context.putInt(key, currentPage.get());
+            log.debug("Saved page state: {} for area {}", currentPage.get(), currentAreaCode);
         }
     }
 }

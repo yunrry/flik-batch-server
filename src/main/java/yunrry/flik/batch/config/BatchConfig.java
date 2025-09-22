@@ -60,29 +60,12 @@ public class BatchConfig {
     public Job tourismDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(areaBasedListStep(jobRepository, transactionManager))
+                .start(createStepForArea("39", jobRepository, transactionManager)) // 제주
                 .next(detailIntroStep(jobRepository, transactionManager))//임시로 detail intro step만 실행 (나중에 지울것)
                 .next(labelDetailStep(jobRepository, transactionManager))
-
-//                .next(detailIntroStep(jobRepository, transactionManager))
-//                .next(googlePlacesEnrichmentJob.enrichTouristAttractionsStep())
-//                .next(googlePlacesEnrichmentJob.enrichRestaurantsStep())
-//                .next(googlePlacesEnrichmentJob.enrichAccommodationsStep())
-//                .next(googlePlacesEnrichmentJob.enrichCulturalFacilitiesStep())
-//                .next(googlePlacesEnrichmentJob.enrichLeisureSportsStep())
-//                .next(googlePlacesEnrichmentJob.enrichShoppingStep())
                 .build();
     }
 
-    @Bean
-    public Step areaBasedListStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        return new StepBuilder("areaBasedListStep", jobRepository)
-                .<TourismRawData, TourismRawData>chunk(50, transactionManager)
-                .reader(tourismApiItemReader)
-                .processor(tourismDataProcessor)
-                .writer(tourismDataWriter)
-                .build();
-    }
 
     @Bean
     public Step detailIntroStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
@@ -344,6 +327,27 @@ public class BatchConfig {
         return new JobBuilder("labelDetailJob2", jobRepository)
                 .listener(batchJobListener)
                 .start(labelDetailStep2(jobRepository, transactionManager))
+                .build();
+    }
+
+
+    @Bean
+    public Job areaBasedTourismJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new JobBuilder("areaBasedTourismJob", jobRepository)
+                .start(createStepForArea("39", jobRepository, transactionManager)) // 제주
+                .next(createStepForArea("6", jobRepository, transactionManager))  // 부산
+                .build();
+    }
+
+    private Step createStepForArea(String areaCode, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        // Step 실행 전에 reader에 지역 코드 설정
+        tourismApiItemReader.setAreaCode(areaCode);
+
+        return new StepBuilder("tourismStep_" + areaCode, jobRepository)
+                .<TourismRawData, TourismRawData>chunk(50, transactionManager)
+                .reader(tourismApiItemReader)
+                .processor(tourismDataProcessor)
+                .writer(tourismDataWriter)
                 .build();
     }
 }
