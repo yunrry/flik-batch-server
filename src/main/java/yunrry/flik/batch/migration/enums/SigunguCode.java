@@ -271,17 +271,9 @@ public enum SigunguCode {
     private final String name;
     private final String code;
 
-    private static final Map<String, SigunguCode> NAME_MAP =
-            Arrays.stream(values()).collect(Collectors.toMap(SigunguCode::getName, Function.identity()));
-
     SigunguCode(String name, String code) {
         this.name = name;
         this.code = code;
-    }
-
-    public static String getCodeByName(String name) {
-        SigunguCode sigungu = NAME_MAP.get(name);
-        return sigungu != null ? sigungu.code : "110"; // 기본값: 종로구
     }
 
     public static String parseAddressToCode(String addr1) {
@@ -307,11 +299,14 @@ public enum SigunguCode {
                 .replace("제주특별자치도", "").replace("제주", "")
                 .trim();
 
-        return NAME_MAP.entrySet().stream()
-                .filter(entry -> addrClean.contains(entry.getKey()))
-                .map(entry -> entry.getValue().code)
-                .findFirst()
-                .orElse("110");
+        // 지역별 우선순위로 검색 (서울 -> 부산 -> 대구 등 순서)
+        for (SigunguCode sigungu : values()) {
+            if (addrClean.contains(sigungu.name)) {
+                return sigungu.code;
+            }
+        }
+
+        return "110"; // 기본값: 종로구
     }
 
     public String getName() { return name; }

@@ -149,3 +149,37 @@ curl -X POST http://localhost:8086/api/batch/label-detail \
   -H "Content-Type: application/json" \
   -H "Accept: application/json"
 ```
+
+
+# 전체 마이그레이션 실행
+curl -X POST http://localhost:8086/api/migration/all \
+-H "Content-Type: application/json"
+
+# 개별 테이블 마이그레이션
+# 숙박시설
+curl -X POST http://localhost:8085/api/migration/accommodation \
+-H "Content-Type: application/json"
+
+# 문화시설
+curl -X POST http://localhost:8085/api/migration/cultural \
+-H "Content-Type: application/json"
+
+# 축제/이벤트
+curl -X POST http://localhost:8080/api/migration/festival \
+-H "Content-Type: application/json"
+
+# 음식점
+curl -X POST http://localhost:8080/api/migration/restaurant \
+-H "Content-Type: application/json"
+
+# 쇼핑
+curl -X POST http://localhost:8080/api/migration/shopping \
+-H "Content-Type: application/json"
+
+# 레포츠
+curl -X POST http://localhost:8080/api/migration/sports \
+-H "Content-Type: application/json"
+
+# 관광지
+curl -X POST http://localhost:8080/api/migration/tourist \
+-H "Content-Type: application/json"
