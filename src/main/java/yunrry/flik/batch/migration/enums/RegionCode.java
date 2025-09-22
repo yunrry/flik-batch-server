@@ -13,15 +13,16 @@ public enum RegionCode {
     GWANGJU("5", "29", "광주시"),
     BUSAN("6", "26", "부산시"),
     ULSAN("7", "31", "울산시"),
-    GYEONGGI("31", "36", "경기도"),
-    GANGWON("32", "41", "강원도"),
+    SEJONG("8", "36", "세종시"),
+    GYEONGGI("31", "41", "경기도"),
+    GANGWON("32", "51", "강원도"),
     CHUNGBUK("33", "43", "충청북도"),
     CHUNGNAM("34", "44", "충청남도"),
-    GYEONGBUK("35", "48", "경상북도"),
-    GYEONGNAM("36", "50", "경상남도"),
-    JEONBUK("37", "46", "전라북도"),
-    JEONNAM("38", "47", "전라남도"),
-    JEJU("39", "51", "제주도");
+    GYEONGBUK("35", "47", "경상북도"),
+    GYEONGNAM("36", "48", "경상남도"),
+    JEONBUK("37", "52", "전라북도"),
+    JEONNAM("38", "46", "전라남도"),
+    JEJU("39", "50", "제주도");
 
     private final String areaCode;
     private final String regnCd;

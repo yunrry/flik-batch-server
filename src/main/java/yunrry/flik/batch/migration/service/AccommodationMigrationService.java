@@ -6,8 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yunrry.flik.batch.migration.enums.MainCategory;
 import yunrry.flik.batch.migration.enums.RegionCode;
 import yunrry.flik.batch.migration.enums.SigunguCode;
+import yunrry.flik.batch.migration.enums.SubCategory;
+import yunrry.flik.batch.migration.mapper.CategoryMapper;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -20,6 +23,7 @@ public class AccommodationMigrationService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final CategoryMapper categoryMapper;
 
     public boolean migrateAccommodations() {
         log.info("숙박시설 데이터 마이그레이션 시작");
@@ -118,7 +122,16 @@ public class AccommodationMigrationService {
             spotData.put("spot_type", "ACCOMMODATION");
             spotData.put("address", getString(item, "addr1"));
             spotData.put("baby_carriage", getString(item, "chkbabycarriage"));
-            spotData.put("category", getString(item, "content_type_name"));
+
+            String labelDepth2 = getString(item, "label_depth2");
+            SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
+            MainCategory mainCategory = subCategory != null ?
+                    categoryMapper.getMainCategory(subCategory) : null;
+            String categoryValue = mainCategory != null ?
+                    mainCategory.getCode() : "other";
+            spotData.put("category", categoryValue);
+
+
             spotData.put("close_time", null);
             spotData.put("content_type_id", getString(item, "content_type_id"));
             spotData.put("content_id", getString(item, "content_id"));
