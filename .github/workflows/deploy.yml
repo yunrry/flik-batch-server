@@ -177,8 +177,8 @@ jobs:
           
           # 사용 가능한 태그들 확인
           AVAILABLE_TAGS=(
-            "main-${{ github.sha }}-arm64"
-            "${{ github.sha }}-arm64" 
+            "main-$(echo ${{ github.sha }} | cut -c1-7)-arm64"
+            "${{ github.sha }}-arm64"
             "latest-arm64"
             "main-arm64"
           )
@@ -242,6 +242,7 @@ jobs:
           if docker ps -q -f name=batch-$NEW_ENV | grep -q .; then
             echo "Stopping existing batch-$NEW_ENV container..."
             docker compose --profile $NEW_ENV down batch-$NEW_ENV || true
+            docker compose --profile $NEW_ENV rm -f batch-$NEW_ENV || true
           fi
           
           # 새 환경 시작 (docker compose 사용)
@@ -290,6 +291,7 @@ jobs:
           
             echo "Rolling back..."
             docker compose --profile $NEW_ENV down batch-$NEW_ENV || true
+            docker compose --profile $NEW_ENV rm -f batch-$NEW_ENV
           
             if [ "$OLD_ENV" != "" ]; then
               echo "Attempting to restart previous environment: batch-$OLD_ENV"
