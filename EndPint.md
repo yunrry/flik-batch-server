@@ -145,7 +145,7 @@ curl -X POST http://localhost:8081/api/batch/label-detail \
   -H "Accept: application/json"
 ```
 ```bash
-curl -X POST http://localhost:8086/api/batch/label-detail \
+curl -X POST http://localhost:8085/api/batch/label-detail \
   -H "Content-Type: application/json" \
   -H "Accept: application/json"
 ```

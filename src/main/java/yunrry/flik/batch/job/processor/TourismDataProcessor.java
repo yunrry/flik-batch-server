@@ -3,6 +3,7 @@ package yunrry.flik.batch.job.processor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.mapper.FieldMapper;
@@ -20,6 +21,14 @@ public class TourismDataProcessor implements ItemProcessor<TourismRawData, Touri
 
     private final ApiService apiService;
     private final FieldMapper fieldMapper;
+
+    @Value("${tourism-api.service-key}")
+    private String serviceKey;      // 외부에서 주입받을 key
+
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
+        log.info("Service key set externally");
+    }
 
     @Override
     public TourismRawData process(TourismRawData item) throws Exception {
@@ -51,12 +60,15 @@ public class TourismDataProcessor implements ItemProcessor<TourismRawData, Touri
         return new ItemProcessor<TourismRawData, TourismRawData>() {
             @Override
             public TourismRawData process(TourismRawData item) throws Exception {
+
                 try {
                     // detailIntro2 API 호출
                     Map<String, Object> detailData = apiService.fetchDetailIntro(
                             item.getContentId(),
-                            item.getContentTypeId()
+                            item.getContentTypeId(),
+                            serviceKey
                     );
+
 
                     // 공통 컬럼 매핑
                     fieldMapper.mapCommonFields(item, detailData);

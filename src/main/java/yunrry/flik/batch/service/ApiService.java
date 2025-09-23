@@ -66,9 +66,9 @@ public class ApiService {
     }
 
 
-    public Map<String, Object> fetchDetailIntro(String contentId, String contentTypeId) {
+    public Map<String, Object> fetchDetailIntro(String contentId, String contentTypeId, String serviceKeyParam) {
         Map<String, Object> params = Map.of(
-                "serviceKey", serviceKey,
+                "serviceKey", serviceKeyParam,
                 "contentId", contentId,
                 "contentTypeId", contentTypeId,
                 "MobileOS", "WEB",
@@ -212,9 +212,9 @@ public class ApiService {
 
 
 
-    public TourismRawData fetchDetailCommon(String contentId) {
+    public TourismRawData fetchDetailCommon(String contentId, String serviceKeyParam) {
         Map<String, Object> params = Map.of(
-                "serviceKey", serviceKey,
+                "serviceKey", serviceKeyParam,
                 "contentId", contentId,
                 "MobileOS", "WEB",
                 "MobileApp", "Flik",
