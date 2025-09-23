@@ -3,6 +3,7 @@ package yunrry.flik.batch.job.processor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.service.ApiSecondService;
@@ -20,7 +21,13 @@ public class LabelDetailProcessor implements ItemProcessor<TourismRawData, Touri
     private final ApiSecondService apiSecondService;
     private int processedCount = 0;
     private static final int MAX_PROCESS_COUNT = 1000;
+    @Value("${tourism-api.service-key}")
+    private String serviceKey;      // 외부에서 주입받을 key
 
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
+        log.info("Service key set externally");
+    }
     @Override
     public TourismRawData process(TourismRawData item) throws Exception {
         if (processedCount >= MAX_PROCESS_COUNT) {
@@ -33,7 +40,7 @@ public class LabelDetailProcessor implements ItemProcessor<TourismRawData, Touri
                 processedCount, MAX_PROCESS_COUNT, item.getContentId());
 
         // detailCommon API 호출하여 완전한 데이터 반환
-        TourismRawData detailCommonData = apiService.fetchDetailCommon(item.getContentId());
+        TourismRawData detailCommonData = apiService.fetchDetailCommon(item.getContentId(), serviceKey);
 
         if (detailCommonData == null) {
             log.warn("Failed to fetch detail common for contentId: {}", item.getContentId());

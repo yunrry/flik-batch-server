@@ -9,7 +9,10 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+import yunrry.flik.batch.job.processor.LabelDetailProcessor;
+import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
+import yunrry.flik.batch.job.reader.LabelDetailItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
 import yunrry.flik.batch.service.RateLimitService;
 
@@ -33,6 +36,8 @@ public class BatchController {
     private final Job labelDetailJob2;
     private final DetailItemReader detailItemReader;
     private final TourismApiItemReader tourismApiItemReader;
+    private final TourismDataProcessor tourismDataProcessor;
+    private final LabelDetailProcessor labelDetailProcessor;
 
     @GetMapping("/test")
     public String test() {
@@ -57,6 +62,9 @@ public class BatchController {
             // Reader에 지역코드와 서비스키 설정
             tourismApiItemReader.setAreaCode(areaCode);
             tourismApiItemReader.setServiceKey(serviceKey);
+            tourismDataProcessor.setServiceKey(serviceKey);
+            labelDetailProcessor.setServiceKey(serviceKey);
+
 
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
@@ -151,7 +159,7 @@ public class BatchController {
 
 
     @PostMapping("/tourism/detail-intro/run")
-    public ResponseEntity<Map<String, Object>> runDetailIntroOnly() {
+    public ResponseEntity<Map<String, Object>> runDetailIntroOnly(@RequestParam String serviceKey) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -166,6 +174,7 @@ public class BatchController {
             // *** Reader 상태 초기화 ***
             detailItemReader.reset();
 
+            tourismDataProcessor.setServiceKey(serviceKey);
             // JobParameters 생성
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
@@ -274,12 +283,15 @@ public class BatchController {
 
 
     @PostMapping("/label-detail")
-    public ResponseEntity<Map<String, Object>> runLabelDetailJob() {
+    public ResponseEntity<Map<String, Object>> runLabelDetailJob(@RequestParam String serviceKey) {
         try {
+
+            labelDetailProcessor.setServiceKey(serviceKey);
             // 고유한 JobParameters 생성 (중복 실행 방지)
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("timestamp", LocalDateTime.now().toString())
                     .toJobParameters();
+
 
             // Job 실행
             var jobExecution = jobLauncher.run(labelDetailJob, jobParameters);
