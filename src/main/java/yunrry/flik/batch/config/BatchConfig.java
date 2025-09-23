@@ -352,16 +352,6 @@ public class BatchConfig {
                 .build();
     }
 
-    private Step createStepForLabel(String serviceKey, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
-        // Step 실행 전에 reader에 지역 코드 설정
-        labelDetailProcessor.setServiceKey(serviceKey);
 
-        return new StepBuilder("tourismStep_serviceKey" + serviceKey, jobRepository)
-                .<TourismRawData, TourismRawData>chunk(50, transactionManager)
-                .reader(labelDetailItemReader)
-                .processor(labelDetailProcessor)
-                .writer(labelDetailWriter)
-                .build();
-    }
 
 }
