@@ -187,3 +187,8 @@ curl -X POST http://localhost:8080/api/migration/tourist \
 curl -X POST "http://localhost:8081/api/batch/tourism/run?areaCode=34&serviceKey=YOUR_SERVICE_KEY" \
 -H "Content-Type: application/json" \
 -H "Accept: application/json"
+
+
+curl -X POST "http://localhost:8086/api/batch/tourism/run?areaCode=30&serviceKey=CrLDBUSsne/jUYJqWkSVgIR6lkPL7HilKUbJ0GwMyG6+tKbq7fKJp+nTd156YkMbbsPJyucVmpGRr1yqhUPFnA==" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json"

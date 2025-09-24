@@ -61,7 +61,7 @@ public class BatchConfig {
     public Job tourismDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("tourismDataJob", jobRepository)
                 .listener(batchJobListener)
-                .start(createStepForArea("52", jobRepository, transactionManager)) // 제주
+                .start(createStepForArea("47", jobRepository, transactionManager)) // 제주
                 .next(detailIntroStep(jobRepository, transactionManager))//임시로 detail intro step만 실행 (나중에 지울것)
                 .next(labelDetailStep(jobRepository, transactionManager))
                 .build();

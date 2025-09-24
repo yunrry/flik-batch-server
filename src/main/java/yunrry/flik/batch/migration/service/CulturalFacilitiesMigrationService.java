@@ -91,14 +91,14 @@ public class CulturalFacilitiesMigrationService {
             spotData.put("baby_carriage", getString(item, "chkbabycarriage"));
             spotData.put("category", getString(item, "content_type_name"));
             spotData.put("close_time", null);
-
             String labelDepth2 = getString(item, "label_depth2");
+
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-            String categoryValue = mainCategory != null ?
-                    mainCategory.getCode() : "other";
-            spotData.put("category", categoryValue);
+//            String categoryValue = mainCategory != null ?
+//                    mainCategory.getCode() : "other";
+            spotData.put("category", mainCategory);
 
 
             spotData.put("content_id", getString(item, "content_id"));

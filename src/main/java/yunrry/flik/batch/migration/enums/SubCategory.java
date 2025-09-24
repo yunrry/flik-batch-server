@@ -2,7 +2,7 @@ package yunrry.flik.batch.migration.enums;
 
 public enum SubCategory {
     // 51개
-    // Nature
+    // NATURE
     MOUNTAIN_SCENERY("NA01", "자연경관(산)"),
     WATER_SCENERY("NA02", "자연경관(하천‧해양)"),
     NATURAL_ECOLOGY("NA03", "자연생태"),
@@ -10,7 +10,7 @@ public enum SubCategory {
     TEMPLE_EXPERIENCE("EX04", "산사체험"),
     OTHER_NATURE("NA06", "기타자연관광"),
 
-    // Indoor
+    // INDOOR
     EXHIBITION_FACILITY("VE07", "전시시설"),
     PERFORMANCE_FACILITY("VE06", "공연시설"),
     EDUCATION_FACILITY("VE09", "교육시설"),
@@ -29,44 +29,44 @@ public enum SubCategory {
     CITY_REGIONAL_CULTURE("VE04", "도시.지역문화관광"),
     INDUSTRIAL_TOURISM("EX06", "산업관광"),
 
-    // Cafe
+    // CAFE
     CAFE_TEA_HOUSE("FD05", "카페/ 찻집"),
 
-    // Activity
+    // ACTIVITY
     LAND_LEISURE_SPORTS("LS01", "육상레저스포츠"),
     WATER_LEISURE_SPORTS("LS02", "수상레저스포츠"),
     AVIATION_LEISURE_SPORTS("LS03", "항공레저스포츠"),
     TRADITIONAL_EXPERIENCE("EX01", "전통체험"),
     CRAFT_EXPERIENCE("EX02", "공예체험"),
-    FARM_VILLAGE_EXPERIENCE("EX03", "농.산.어촌체험"),
+    FARM_VILLAGE_EXPERIENCE("EX03", "농.산.어촌 체험"),
     WELLNESS_TOURISM("EX05", "웰니스관광"),
     COMPLEX_LEISURE_SPORTS("LS04", "복합레저스포츠"),
     LEISURE_SPORTS_FACILITY("VE10", "레저스포츠시설"),
     OTHER_EXPERIENCE("EX07", "기타체험"),
 
-    // Festival
+    // FESTIVAL
     FESTIVAL("EV01", "축제"),
     PERFORMANCE("EV02", "공연"),
     EVENT("EV03", "행사"),
 
-    // Market
+    // MARKET
     MARKET("SH06", "시장"),
     SPECIALTY_STORE("SH05", "전문매장/상가"),
     DUTY_FREE_SHOP("SH04", "면세점"),
     OTHER_SHOPPING_FACILITY("SH07", "기타쇼핑시설"),
 
 
-    // Theme Park
+    // THEMEPARK
     THEME_PARK("VE02", "테마공원"),
     COMPLEX_TOURISM_FACILITY("VE05", "복합관광시설"),
 
-    // Restaurant
+    // RESTAURANT
     KOREAN_FOOD("FD01", "한식"),
     FOREIGN_FOOD("FD02", "외국식"),
     SIMPLE_FOOD("FD03", "간이음식"),
     PUB_BAR("FD04", "주점"),
 
-    // Accommodation
+    // ACCOMMODATION
     HOTEL("AC01", "호텔"),
     CONDOMINIUM("AC02", "콘도미니엄"),
     PENSION_HOMESTAY("AC03", "펜션/민박"),

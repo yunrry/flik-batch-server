@@ -93,9 +93,9 @@ public class SportsRecreationMigrationService {
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-            String categoryValue = mainCategory != null ?
-                    mainCategory.getCode() : "other";
-            spotData.put("category", categoryValue);
+//            String categoryValue = mainCategory != null ?
+//                    mainCategory.getCode() : "other";
+            spotData.put("category", mainCategory);
 
             spotData.put("content_id", getString(item, "content_id"));
             spotData.put("day_off", getString(item, "restdate"));
