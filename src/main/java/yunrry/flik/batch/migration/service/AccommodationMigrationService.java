@@ -122,14 +122,14 @@ public class AccommodationMigrationService {
             spotData.put("spot_type", "ACCOMMODATION");
             spotData.put("address", getString(item, "addr1"));
             spotData.put("baby_carriage", getString(item, "chkbabycarriage"));
-
             String labelDepth2 = getString(item, "label_depth2");
+
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-            String categoryValue = mainCategory != null ?
-                    mainCategory.getCode() : "other";
-            spotData.put("category", categoryValue);
+//            String categoryValue = mainCategory != null ?
+//                    mainCategory.getCode() : "other";
+            spotData.put("category", mainCategory);
 
 
             spotData.put("close_time", null);
