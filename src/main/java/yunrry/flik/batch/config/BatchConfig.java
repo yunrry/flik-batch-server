@@ -81,7 +81,7 @@ public class BatchConfig {
     }
 
     @Bean
-    public Job RestaurantDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    public Job restaurantDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("restaurantDataJob", jobRepository)
                 .listener(batchJobListener)
                 .start(createStepForRestaurant("47", jobRepository, transactionManager)) // 제주
