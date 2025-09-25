@@ -16,15 +16,21 @@ import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.job.GooglePlacesEnrichmentJob;
 import yunrry.flik.batch.job.processor.InfoDetailProcessor;
 import yunrry.flik.batch.job.processor.LabelDetailProcessor;
+import yunrry.flik.batch.job.processor.RestaurantDataProcessor;
 import yunrry.flik.batch.job.processor.TourismDataProcessor;
 import yunrry.flik.batch.job.reader.DetailItemReader;
 import yunrry.flik.batch.job.reader.LabelDetailItemReader;
+import yunrry.flik.batch.job.reader.RestaurantApiItemReader;
 import yunrry.flik.batch.job.reader.TourismApiItemReader;
 import yunrry.flik.batch.job.writer.InfoDetailWriter;
 import yunrry.flik.batch.job.writer.LabelDetailWriter;
+import yunrry.flik.batch.job.writer.RestaurantDataWriter;
 import yunrry.flik.batch.job.writer.TourismDataWriter;
 import yunrry.flik.batch.listener.BatchJobListener;
 import yunrry.flik.batch.migration.service.*;
+import yunrry.flik.batch.service.ApiService;
+import yunrry.flik.batch.service.RateLimitService;
+import yunrry.flik.batch.service.RestaurantApiService;
 
 @Configuration
 @RequiredArgsConstructor
@@ -47,6 +53,13 @@ public class BatchConfig {
 
     private final GooglePlacesEnrichmentJob googlePlacesEnrichmentJob;
 
+    private final RestaurantApiItemReader restaurantApiItemReader;
+    private final RestaurantDataProcessor restaurantDataProcessor;
+    private final RestaurantDataWriter restaurantDataWriter;
+
+    private final ApiService apiService;
+    private final RestaurantApiService restaurantApiService;
+    private final RateLimitService rateLimitService;
 
     // 마이그레이션 서비스들
     private final AccommodationMigrationService accommodationMigrationService;
@@ -67,6 +80,15 @@ public class BatchConfig {
                 .build();
     }
 
+    @Bean
+    public Job RestaurantDataJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new JobBuilder("restaurantDataJob", jobRepository)
+                .listener(batchJobListener)
+                .start(createStepForRestaurant("47", jobRepository, transactionManager)) // 제주
+                .next(detailIntroStep(jobRepository, transactionManager))//임시로 detail intro step만 실행 (나중에 지울것)
+                .next(labelDetailStep(jobRepository, transactionManager))
+                .build();
+    }
 
     @Bean
     public Step detailIntroStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
@@ -342,13 +364,27 @@ public class BatchConfig {
 
     private Step createStepForArea(String areaCode, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         // Step 실행 전에 reader에 지역 코드 설정
-        tourismApiItemReader.setAreaCode(areaCode);
+        TourismApiItemReader reader = new TourismApiItemReader(apiService, rateLimitService);
+        reader.setAreaCode(areaCode);
 
         return new StepBuilder("tourismStep_" + areaCode, jobRepository)
                 .<TourismRawData, TourismRawData>chunk(50, transactionManager)
                 .reader(tourismApiItemReader)
                 .processor(tourismDataProcessor)
                 .writer(tourismDataWriter)
+                .build();
+    }
+
+    private Step createStepForRestaurant(String areaCode, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        // Step 실행 전에 reader에 지역 코드 설정
+        RestaurantApiItemReader reader = new RestaurantApiItemReader(restaurantApiService, rateLimitService);
+        reader.setAreaCode(areaCode);
+
+        return new StepBuilder("restaurantStep_" + areaCode, jobRepository)
+                .<TourismRawData, TourismRawData>chunk(50, transactionManager)
+                .reader(restaurantApiItemReader)
+                .processor(restaurantDataProcessor)
+                .writer(restaurantDataWriter)
                 .build();
     }
 

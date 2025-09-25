@@ -93,9 +93,9 @@ public class ShoppingMigrationService {
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-//            String categoryValue = mainCategory != null ?
-//                    mainCategory.getCode() : "other";
-            spotData.put("category", mainCategory);
+            String categoryValue = mainCategory != null ?
+                    mainCategory.toString() : "SHOP";
+            spotData.put("category", categoryValue);
 
             spotData.put("content_id", getString(item, "content_id"));
             spotData.put("day_off", getString(item, "restdate"));
