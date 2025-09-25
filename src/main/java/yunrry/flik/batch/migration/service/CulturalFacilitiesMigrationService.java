@@ -96,9 +96,9 @@ public class CulturalFacilitiesMigrationService {
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-//            String categoryValue = mainCategory != null ?
-//                    mainCategory.getCode() : "other";
-            spotData.put("category", mainCategory);
+            String categoryValue = mainCategory != null ?
+                    mainCategory.toString() : "CULTURE";
+            spotData.put("category", categoryValue);
 
 
             spotData.put("content_id", getString(item, "content_id"));

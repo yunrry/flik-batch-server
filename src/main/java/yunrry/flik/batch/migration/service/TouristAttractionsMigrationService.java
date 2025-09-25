@@ -91,9 +91,9 @@ public class TouristAttractionsMigrationService {
             SubCategory subCategory = SubCategory.findByKoreanName(labelDepth2);
             MainCategory mainCategory = subCategory != null ?
                     categoryMapper.getMainCategory(subCategory) : null;
-//            String categoryValue = mainCategory != null ?
-//                    mainCategory.getCode() : "other";
-            spotData.put("category", mainCategory);
+            String categoryValue = mainCategory != null ?
+                    mainCategory.toString() : "TOUR_SPOT";
+            spotData.put("category", categoryValue);
             spotData.put("close_time", null);
             spotData.put("content_type_id", getString(item, "content_type_id"));
             spotData.put("content_id", getString(item, "content_id"));

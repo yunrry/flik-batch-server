@@ -64,7 +64,7 @@ public class BatchController {
             tourismApiItemReader.setServiceKey(serviceKey);
             tourismDataProcessor.setServiceKey(serviceKey);
             labelDetailProcessor.setServiceKey(serviceKey);
-
+            log.info("start tourism batch job for areaCode: {}, serviceKey: {}", areaCode, serviceKey);
 
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
@@ -183,7 +183,7 @@ public class BatchController {
 
             // 배치 Job 실행
             JobExecution jobExecution = jobLauncher.run(detailIntroOnlyJob, jobParameters);
-
+            log.info("Detail intro job launched with serviceKey: {}", serviceKey);
             response.put("success", true);
             response.put("jobExecutionId", jobExecution.getId());
             response.put("status", jobExecution.getStatus().toString());
