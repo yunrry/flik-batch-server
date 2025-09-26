@@ -205,11 +205,17 @@ bashcurl -X POST "http://localhost:8085/api/collect/tourism" \
 -d "serviceKey=your-service-key" \
 -d "areaCode=6" \
 -d "contentTypeId=39" \
--d "collectCount=100"
+-d "collectCount=10000"
 포트 8086:
 bashcurl -X POST "http://localhost:8086/api/collect/tourism" \
 -d "serviceKey=your-service-key" \
 -d "areaCode=6" \
 -d "contentTypeId=39" \
--d "collectCount=100"
+-d "collectCount=10000"
 (부산=6, 음식점=39 예시)
+
+curl -X POST "http://localhost:8086/api/collect/tourism" \
+-d "serviceKey=MjAzNGNiNDk0MzQ0ODU5ZTQ1YzRjNjcyOTU2MTZmNGM0NDMxNmQ0NGM1Mzg1ZTE5ZGY1YjNjMzhlZTI3MGEyZQ==" \
+-d "areaCode=6" \
+-d "contentTypeId=39" \
+-d "collectCount=10000"

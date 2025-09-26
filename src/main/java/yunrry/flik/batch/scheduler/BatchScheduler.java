@@ -25,7 +25,7 @@ public class BatchScheduler {
     @Value("${tourism-api.service-key}")
     private String serviceKey;
 
-    @Scheduled(cron = "0 0 1 * * ?") // 매일 새벽 1시
+    @Scheduled(cron = "0 0 1,19 * * ?", zone = "Asia/Seoul") // 매일 새벽 1시
     public void executeTourismDataCollectionBatch() {
         String[] areaCodes = {"2", "3", "4", "5", "6", "7", "8", "31", "32", "33", "34", "35", "36", "37", "38", "39", "1"};
         String[] contentTypeIds = {"12", "14", "15", "28", "32", "38", "39"};
@@ -37,7 +37,7 @@ public class BatchScheduler {
                             .addString("serviceKey", serviceKey)  // @Value로 주입받은 값 사용
                             .addString("areaCode", areaCode)
                             .addString("contentTypeId", contentTypeId)
-                            .addString("collectCount", "1000")
+                            .addString("collectCount", "100")
                             .addString("executionTime", LocalDateTime.now().toString())
                             .toJobParameters();
 
@@ -66,7 +66,7 @@ public class BatchScheduler {
 //        }
 //    }
 
-    @Scheduled(cron = "0 0 4 * * ?") // 매일 새벽 4시
+    @Scheduled(cron = "0 0 4,20 * * ?", zone = "Asia/Seoul") // 매일 새벽 4시
     public void executeAllMigrationBatch() {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
