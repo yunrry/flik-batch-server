@@ -63,11 +63,16 @@ public class DynamicTourismReader implements ItemReader<TourismRawData> {
             return null;
         }
 
+        log.debug("Reading data - currentBatch: {}, currentIndex: {}",
+                currentBatch != null ? currentBatch.size() : "null", currentIndex.get());
+
         if (currentBatch == null || currentIndex.get() >= currentBatch.size()) {
+            log.info("Fetching next batch - page: {}", currentPage.get());
             fetchNextBatch();
         }
 
         if (currentBatch == null || currentBatch.isEmpty()) {
+            log.info("No more data available, ending read");
             return null;
         }
 

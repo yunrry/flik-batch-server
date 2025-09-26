@@ -52,6 +52,7 @@ public class ApiService {
         );
 
         try {
+            log.info("Calling API with params: {}", params);
             String response = webClient.get()
                     .uri(uriBuilder -> {
                         uriBuilder.path("/areaBasedList2");
@@ -62,6 +63,8 @@ public class ApiService {
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
+            log.info("API response length: {}, first 100 chars: {}",
+                    response.length(), response.substring(0, Math.min(100, response.length())));
             handleApiResponse(response);
             return parseAreaBasedResponse(response);
         } catch (Exception e) {
