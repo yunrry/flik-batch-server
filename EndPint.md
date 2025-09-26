@@ -184,7 +184,7 @@ curl -X POST http://localhost:8080/api/migration/sports \
 curl -X POST http://localhost:8080/api/migration/tourist \
 -H "Content-Type: application/json"
 
-curl -X POST "http://localhost:8081/api/batch/tourism/run?areaCode=34&serviceKey=YOUR_SERVICE_KEY" \
+curl -X POST "http://localhost:8085/api/batch/tourism/run?areaCode=26&serviceKey=2034cb494344859e45c4c67295616f4c44316d44c5385e19df5b3c38ee270a2e" \
 -H "Content-Type: application/json" \
 -H "Accept: application/json"
 
@@ -192,3 +192,24 @@ curl -X POST "http://localhost:8081/api/batch/tourism/run?areaCode=34&serviceKey
 curl -X POST "http://localhost:8085/api/batch/tourism/run?areaCode=31&serviceKey=wSTqSaG6MLJeM2pUEyMXp9TngT5qu7NsfM/5Ojl/ZTk1Mjk3YjhmOGNmNDZlNTAxYTAyMDQyNGI1ZTcxMzQ1ODJlMmMyODlkMDUwYTcxNTRhNGRkNmUwNjFmYmQ3Yg==" \
 -H "Content-Type: application/json" \
 -H "Accept: application/json"
+
+
+포트 8081:
+bashcurl -X POST "http://localhost:8081/api/collect/tourism" \
+-d "serviceKey=your-service-key" \
+-d "areaCode=6" \
+-d "contentTypeId=39" \
+-d "collectCount=100"
+포트 8085:
+bashcurl -X POST "http://localhost:8085/api/collect/tourism" \
+-d "serviceKey=your-service-key" \
+-d "areaCode=6" \
+-d "contentTypeId=39" \
+-d "collectCount=100"
+포트 8086:
+bashcurl -X POST "http://localhost:8086/api/collect/tourism" \
+-d "serviceKey=your-service-key" \
+-d "areaCode=6" \
+-d "contentTypeId=39" \
+-d "collectCount=100"
+(부산=6, 음식점=39 예시)
