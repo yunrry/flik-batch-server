@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import yunrry.flik.batch.domain.ApiCallHistory;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.repository.TourismDataRepository;
 
@@ -28,7 +29,15 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         String tableName = getTableName(data.getContentTypeId());
         String sql = buildInsertSql(tableName);
 
-        jdbcTemplate.update(sql, ps -> setBasicParameters(ps, data));
+        int rowsAffected = jdbcTemplate.update(sql, ps -> setBasicParameters(ps, data));
+
+        if (rowsAffected == 0) {
+            log.info("Updated existing content_id: {} (type: {})",
+                    data.getContentId(), data.getContentTypeId());
+        } else {
+            log.debug("Inserted new content_id: {} (type: {})",
+                    data.getContentId(), data.getContentTypeId());
+        }
     }
 
     @Override
@@ -187,6 +196,42 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         return result;
     }
 
+
+    @Override
+    public void saveApiCallHistory(String contentTypeId, String areaCode, int lastPageNo, int pageSize) {
+        String sql = """
+        INSERT INTO api_call_history (content_type_id, area_code, last_page_no, page_size, last_call_time)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE 
+            last_page_no = VALUES(last_page_no),
+            page_size = VALUES(page_size),
+            last_call_time = CURRENT_TIMESTAMP
+        """;
+        jdbcTemplate.update(sql, contentTypeId, areaCode, lastPageNo, pageSize);
+    }
+
+    @Override
+    public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
+        String sql = "SELECT * FROM api_call_history WHERE content_type_id = ? AND area_code = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql,
+                    BeanPropertyRowMapper.newInstance(ApiCallHistory.class),
+                    contentTypeId, areaCode);
+        } catch (Exception e) {
+            return null; // 첫 호출시
+        }
+    }
+
+    @Override
+    public void rollbackApiCallHistory(String contentTypeId, String areaCode) {
+        String sql = """
+        UPDATE api_call_history 
+        SET last_page_no = last_page_no - 1 
+        WHERE content_type_id = ? AND area_code = ? AND last_page_no > 1
+        """;
+        jdbcTemplate.update(sql, contentTypeId, areaCode);
+    }
+
     private String getTableName(String contentTypeId) {
         return switch (contentTypeId) {
             case "12" -> "fetched_tourist_attractions";
@@ -202,18 +247,18 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
 
     private String buildInsertSql(String tableName) {
         return String.format("""
-            INSERT INTO %s (
-                content_id, content_type_id, content_type_name, title, addr1, addr2,
-                first_image, first_image2, map_x, map_y, area_code, sigungu_code,
-                cat1, cat2, cat3, created_time, modified_time, tel, zipcode, overview, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                title = VALUES(title),
-                addr1 = VALUES(addr1),
-                first_image = VALUES(first_image),
-                modified_time = VALUES(modified_time),
-                updated_at = CURRENT_TIMESTAMP
-            """, tableName);
+        INSERT INTO %s (
+            content_id, content_type_id, content_type_name, title, addr1, addr2,
+            first_image, first_image2, map_x, map_y, area_code, sigungu_code,
+            cat1, cat2, cat3, created_time, modified_time, tel, zipcode, overview, source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            addr1 = VALUES(addr1),
+            first_image = VALUES(first_image),
+            modified_time = VALUES(modified_time),
+            updated_at = CURRENT_TIMESTAMP
+        """, tableName);
     }
 
     private String buildUpdateSql(String tableName, String contentTypeId) {

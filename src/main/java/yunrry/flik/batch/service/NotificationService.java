@@ -24,6 +24,19 @@ public class NotificationService {
     @Value("${discord.webhook.url:}")
     private String discordWebhookUrl;
 
+    public void sendAlert(String message) {
+        try {
+            webClient.post()
+                    .uri(discordWebhookUrl)
+                    .bodyValue(Map.of("content", "[API 알림] " + message))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (Exception e) {
+            log.error("Discord 알림 전송 실패", e);
+        }
+    }
+
     public void sendBatchCompletionAlert(String jobName, long totalCount, String status) {
         if (discordWebhookUrl.isEmpty()) {
             log.warn("Discord webhook URL not configured");

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import yunrry.flik.batch.domain.TourismRawData;
+import yunrry.flik.batch.exception.ApiLimitExceededException;
 import yunrry.flik.batch.repository.TourismDataRepository;
 
 import java.time.Duration;
@@ -33,6 +34,49 @@ public class ApiService {
             .baseUrl("http://apis.data.go.kr/B551011/KorService2")
             .build();
 
+
+
+    // ApiService.java
+    public List<TourismRawData> fetchAreaBasedListByContentType(int pageNo, String areaCode,
+                                                                String contentTypeId, int numOfRows, String serviceKeyParam) {
+        Map<String, Object> params = Map.of(
+                "serviceKey", serviceKeyParam,
+                "numOfRows", numOfRows,
+                "pageNo", pageNo,
+                "MobileOS", "WEB",
+                "MobileApp", "Flik",
+                "contentTypeId", contentTypeId,
+                "_type", "json",
+                "arrange", "C",
+                "areaCode", areaCode
+        );
+
+        try {
+            String response = webClient.get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.path("/areaBasedList2");
+                        params.forEach(uriBuilder::queryParam);
+                        return uriBuilder.build();
+                    })
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+            handleApiResponse(response);
+            return parseAreaBasedResponse(response);
+        } catch (Exception e) {
+            log.error("Error fetching area based list", e);
+            return Collections.emptyList();
+        }
+    }
+
+    private void handleApiResponse(String response) throws ApiLimitExceededException {
+        if (response != null && response.contains("LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR")) {
+            throw new ApiLimitExceededException("API 호출 한도 초과");
+        }
+    }
+
+
     // ApiService.java
     public List<TourismRawData> fetchAreaBasedList(int pageNo, String areaCode, String serviceKeyParam) {
         Map<String, Object> params = Map.of(
@@ -41,6 +85,7 @@ public class ApiService {
                 "pageNo", pageNo,
                 "MobileOS", "WEB",
                 "MobileApp", "Flik",
+                "contentTypeId", 39, // 음식점
                 "_type", "json",
                 "arrange", "R",
                 "areaCode", areaCode
@@ -57,7 +102,7 @@ public class ApiService {
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
-
+            handleApiResponse(response);
             return parseAreaBasedResponse(response);
         } catch (Exception e) {
             log.error("Error fetching area based list", e);
@@ -87,7 +132,7 @@ public class ApiService {
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
-
+            handleApiResponse(response);
             return parseDetailIntroResponse(response);
         } catch (Exception e) {
             log.error("Error fetching detail intro for contentId: {}", contentId, e);
