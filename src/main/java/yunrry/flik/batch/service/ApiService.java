@@ -31,7 +31,8 @@ public class ApiService {
     private String serviceKey;
 
     private final WebClient webClient = WebClient.builder()
-            .baseUrl("http://apis.data.go.kr/B551011/KorService2")
+            .baseUrl("https://apis.data.go.kr/B551011/KorService2")
+            .defaultHeader("accept", "*/*")
             .build();
 
 

@@ -219,3 +219,5 @@ curl -X POST "http://localhost:8086/api/collect/tourism" \
 -d "areaCode=6" \
 -d "contentTypeId=39" \
 -d "collectCount=10000"
+
+
