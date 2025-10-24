@@ -35,12 +35,13 @@ public class TourismDataCollectionController {
                     .addString("areaCode", areaCode)
                     .addString("contentTypeId", contentTypeId)
                     .addString("collectCount", collectCount)
-                    .addString("executionTime", LocalDateTime.now().toString())
+                    .addLong("time", System.currentTimeMillis())  // 매 실행마다 고유한 파라미터 추가
                     .toJobParameters();
 
             jobLauncher.run(tourismDataCollectionJob, jobParameters);
             return ResponseEntity.ok("Job executed successfully");
         } catch (Exception e) {
+            log.error("Job execution failed", e);
             return ResponseEntity.status(500).body("Job failed: " + e.getMessage());
         }
     }
