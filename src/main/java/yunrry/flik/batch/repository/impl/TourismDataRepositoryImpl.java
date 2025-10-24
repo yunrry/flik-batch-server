@@ -214,14 +214,13 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     @Override
     public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
         String sql = "SELECT * FROM api_call_history " +
-                "WHERE content_type_id = ? AND area_code = ? " +
-                "ORDER BY last_call_time DESC LIMIT 1";  // created_at 대신 last_call_time 사용
+                "WHERE content_type_id = ? AND area_code = ?";  // ORDER BY 제거
         try {
             return jdbcTemplate.queryForObject(sql,
                     BeanPropertyRowMapper.newInstance(ApiCallHistory.class),
                     contentTypeId, areaCode);
         } catch (EmptyResultDataAccessException e) {
-            return null; // 첫 호출시
+            return null;  // 첫 호출시
         }
     }
 
