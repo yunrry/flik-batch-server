@@ -215,7 +215,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
     public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
         String sql = "SELECT * FROM api_call_history " +
                 "WHERE content_type_id = ? AND area_code = ? " +
-                "ORDER BY created_at DESC LIMIT 1";  // 가장 최근 기록 가져오기
+                "ORDER BY last_call_time DESC LIMIT 1";  // created_at 대신 last_call_time 사용
         try {
             return jdbcTemplate.queryForObject(sql,
                     BeanPropertyRowMapper.newInstance(ApiCallHistory.class),
