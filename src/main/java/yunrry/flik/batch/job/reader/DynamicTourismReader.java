@@ -46,8 +46,11 @@ public class DynamicTourismReader implements ItemReader<TourismRawData> {
 
         // 이전 호출 이력 조회하여 시작 페이지 설정
         ApiCallHistory history = tourismDataRepository.getLastApiCallHistory(contentTypeId, areaCode);
+
         if (history != null) {
             currentPage.set(history.getLastPageNo() + 1);
+        } else {
+            currentPage.set(1);  // 기록이 없는 경우 1페이지부터 시작
         }
 
         log.info("DynamicTourismReader initialized - area: {}, type: {}, startPage: {}",
