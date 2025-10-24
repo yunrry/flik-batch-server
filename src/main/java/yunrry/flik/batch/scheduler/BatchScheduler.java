@@ -41,7 +41,6 @@ public class BatchScheduler {
                             .addString("contentTypeId", contentTypeId)
                             .addString("collectCount", "100")
                             .addString("executionTime", LocalDateTime.now().toString())
-                            .addString("startPage", "1")  // 초기화를 위해 startPage 1로 설정
                             .addLong("run.id", System.currentTimeMillis())  // 실행 식별자
                             .toJobParameters();
 
