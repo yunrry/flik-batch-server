@@ -2,6 +2,7 @@ package yunrry.flik.batch.repository.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -212,12 +213,14 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
 
     @Override
     public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
-        String sql = "SELECT * FROM api_call_history WHERE content_type_id = ? AND area_code = ?";
+        String sql = "SELECT * FROM api_call_history " +
+                "WHERE content_type_id = ? AND area_code = ? " +
+                "ORDER BY created_at DESC LIMIT 1";  // 가장 최근 기록 가져오기
         try {
             return jdbcTemplate.queryForObject(sql,
                     BeanPropertyRowMapper.newInstance(ApiCallHistory.class),
                     contentTypeId, areaCode);
-        } catch (Exception e) {
+        } catch (EmptyResultDataAccessException e) {
             return null; // 첫 호출시
         }
     }
