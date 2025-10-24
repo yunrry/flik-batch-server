@@ -213,6 +213,7 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
 
     @Override
     public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
+        //fix
         String sql = "SELECT * FROM api_call_history " +
                 "WHERE content_type_id = ? AND area_code = ? " +
                 "ORDER BY last_call_time DESC";
