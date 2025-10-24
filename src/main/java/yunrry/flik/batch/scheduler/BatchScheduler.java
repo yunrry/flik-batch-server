@@ -29,6 +29,8 @@ public class BatchScheduler {
     public void executeTourismDataCollectionBatch() {
         String[] areaCodes = {"2", "3", "4", "5", "6", "7", "8", "31", "32", "33", "34", "35", "36", "37", "38", "39", "1"};
         String[] contentTypeIds = {"12", "14", "15", "28", "32", "38", "39"};
+        // 관광타입(12:관광지, 14:문화시설, 15:축제공연행사, 28:레포츠, 32:숙박, 38:쇼핑, 39:음식점)
+        // "1: 서울" "2: 인천" "3: 대전" "4: 대구" "5: 광주" "6: 부산" "7: 울산" "8: 세종특별자치시" "31: 경기도" "32: 강원특별자치도" "33: 충청북도" "34: 충청남도" "35: 경상북도" "36: 경상남도" "37: 전북특별자치도" "38: 전라남도" "39: 제주특별자치도"
 
         for (String areaCode : areaCodes) {
             for (String contentTypeId : contentTypeIds) {
