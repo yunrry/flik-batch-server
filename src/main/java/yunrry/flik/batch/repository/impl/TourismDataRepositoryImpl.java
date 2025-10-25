@@ -13,6 +13,7 @@ import yunrry.flik.batch.repository.TourismDataRepository;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -211,26 +212,40 @@ public class TourismDataRepositoryImpl implements TourismDataRepository {
         jdbcTemplate.update(sql, contentTypeId, areaCode, lastPageNo, pageSize);
     }
 
+    // java
     @Override
     public ApiCallHistory getLastApiCallHistory(String contentTypeId, String areaCode) {
-        //fix
-        String sql = "SELECT * FROM api_call_history " +
-                "WHERE content_type_id = ? AND area_code = ? " +
-                "ORDER BY last_call_time DESC";
-        try {
-            List<ApiCallHistory> results = jdbcTemplate.query(sql,
-                    BeanPropertyRowMapper.newInstance(ApiCallHistory.class),
-                    contentTypeId, areaCode);
+        String sql =
+                "SELECT id, content_type_id, area_code, last_page_no, page_size, total_collected, last_call_time " +
+                        "FROM api_call_history " +
+                        "WHERE CAST(content_type_id AS UNSIGNED) = CAST(? AS UNSIGNED) " +
+                        "  AND CAST(area_code AS UNSIGNED) = CAST(? AS UNSIGNED) " +
+                        "ORDER BY last_call_time DESC " +
+                        "LIMIT 1";
 
-            log.debug("Found {} history records for contentType: {}, area: {}",
-                    results.size(), contentTypeId, areaCode);
+        List<ApiCallHistory> rows = jdbcTemplate.query(
+                sql,
+                (rs, i) -> {
+                    var ts = rs.getTimestamp("last_call_time"); // java.sql.Timestamp
+                    return ApiCallHistory.builder()
+                            .id(rs.getLong("id"))
+                            .contentTypeId(rs.getString("content_type_id"))
+                            .areaCode(rs.getString("area_code"))
+                            .lastPageNo(rs.getInt("last_page_no"))
+                            .pageSize(rs.getInt("page_size"))
+                            .totalCollected(rs.getInt("total_collected"))
+                            .lastCallTime(ts != null ? ts.toLocalDateTime() : null)
+                            .build();
+                },
+                contentTypeId,
+                areaCode
+        );
 
-            return results.isEmpty() ? null : results.get(0);
-        } catch (Exception e) {
-            log.debug("No history found for contentType: {}, area: {}",
-                    contentTypeId, areaCode);
+        if (rows.isEmpty()) {
+            log.debug("No history found for contentType: {}, area: {}", contentTypeId, areaCode);
             return null;
         }
+        return rows.get(0);
     }
 
     @Override
