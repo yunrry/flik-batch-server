@@ -28,17 +28,21 @@ public class TourismDataCollectionController {
             @RequestParam String areaCode,
             @RequestParam String contentTypeId,
             @RequestParam(defaultValue = "100") String collectCount) {
-
         try {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("serviceKey", serviceKey)
                     .addString("areaCode", areaCode)
                     .addString("contentTypeId", contentTypeId)
                     .addString("collectCount", collectCount)
-                    .addLong("time", System.currentTimeMillis())  // 매 실행마다 고유한 파라미터 추가
+                    .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
 
-            jobLauncher.run(tourismDataCollectionJob, jobParameters);
+            var execution = jobLauncher.run(tourismDataCollectionJob, jobParameters);
+
+            if (execution.getStatus().isUnsuccessful()) {
+                return ResponseEntity.status(500)
+                        .body("Job failed: " + execution.getExitStatus().getExitDescription());
+            }
             return ResponseEntity.ok("Job executed successfully");
         } catch (Exception e) {
             log.error("Job execution failed", e);

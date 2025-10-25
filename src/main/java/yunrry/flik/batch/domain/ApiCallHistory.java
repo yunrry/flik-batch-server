@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ApiCallHistory {
+    private Long id;
     private String contentTypeId;
     private String areaCode;
     private int lastPageNo;

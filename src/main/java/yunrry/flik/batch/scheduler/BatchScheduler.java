@@ -5,19 +5,31 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class BatchScheduler {
 
+    private static final String[] AREA_CODES = {
+            "2", "3", "4", "5", "6", "7", "8", "31", "32", "33", "34", "35", "36", "37", "38", "39", "1"
+    };
+    // 관광타입(12:관광지, 14:문화시설, 15:축제공연행사, 28:레포츠, 32:숙박, 38:쇼핑, 39:음식점)
+    private static final String[] CONTENT_TYPE_IDS = { "12", "14", "15", "28", "32", "38", "39" };
+    private static final String DEFAULT_COLLECT_COUNT = "100";
+    private static final long BETWEEN_RUN_DELAY_MS = 1000L;
+
     private final JobLauncher jobLauncher;
+    private final JobExplorer jobExplorer;
+
     private final Job tourismDataJob;
     private final Job allMigrationJob;
     private final Job tourismDataCollectionJob;
@@ -25,27 +37,33 @@ public class BatchScheduler {
     @Value("${tourism-api.service-key}")
     private String serviceKey;
 
-    @Scheduled(cron = "0 0 1,19 * * ?", zone = "Asia/Seoul") // 매일 새벽 1시
+    @Scheduled(cron = "0 0 1,19 * * ?", zone = "Asia/Seoul") // 매일 1시, 19시
     public void executeTourismDataCollectionBatch() {
-        String[] areaCodes = {"2", "3", "4", "5", "6", "7", "8", "31", "32", "33", "34", "35", "36", "37", "38", "39", "1"};
-        String[] contentTypeIds = {"12", "14", "15", "28", "32", "38", "39"};
-        // 관광타입(12:관광지, 14:문화시설, 15:축제공연행사, 28:레포츠, 32:숙박, 38:쇼핑, 39:음식점)
-        // "1: 서울" "2: 인천" "3: 대전" "4: 대구" "5: 광주" "6: 부산" "7: 울산" "8: 세종특별자치시" "31: 경기도" "32: 강원특별자치도" "33: 충청북도" "34: 충청남도" "35: 경상북도" "36: 경상남도" "37: 전북특별자치도" "38: 전라남도" "39: 제주특별자치도"
+        // 겹침 방지: 이전 실행이 남아있으면 건너뜀
+        if (!jobExplorer.findRunningJobExecutions(tourismDataCollectionJob.getName()).isEmpty()) {
+            log.warn("Skip scheduling. Job '{}' is still running.", tourismDataCollectionJob.getName());
+            return;
+        }
 
-        for (String areaCode : areaCodes) {
-            for (String contentTypeId : contentTypeIds) {
+        for (String areaCode : AREA_CODES) {
+            for (String contentTypeId : CONTENT_TYPE_IDS) {
                 try {
                     JobParameters jobParameters = new JobParametersBuilder()
-                            .addString("serviceKey", serviceKey)  // @Value로 주입받은 값 사용
+                            .addString("serviceKey", serviceKey)
                             .addString("areaCode", areaCode)
                             .addString("contentTypeId", contentTypeId)
-                            .addString("collectCount", "100")
+                            .addString("collectCount", DEFAULT_COLLECT_COUNT)
                             .addString("executionTime", LocalDateTime.now().toString())
-                            .addLong("run.id", System.currentTimeMillis())  // 실행 식별자
+                            // 유일성 보장 파라미터
+                            .addLong("run.id", System.currentTimeMillis())
                             .toJobParameters();
 
+                    log.info("Launch '{}' areaCode={}, contentTypeId={}, collectCount={}",
+                            tourismDataCollectionJob.getName(), areaCode, contentTypeId, DEFAULT_COLLECT_COUNT);
+
                     jobLauncher.run(tourismDataCollectionJob, jobParameters);
-                    Thread.sleep(1000);
+
+                    TimeUnit.MILLISECONDS.sleep(BETWEEN_RUN_DELAY_MS);
                 } catch (Exception e) {
                     log.error("Failed - area: {}, type: {}", areaCode, contentTypeId, e);
                 }
@@ -53,13 +71,12 @@ public class BatchScheduler {
         }
     }
 
-
-//
-//    @Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시
+//    @Scheduled(cron = "0 0 2 * * ?", zone = "Asia/Seoul")
 //    public void executeTourismDataBatch() {
 //        try {
 //            JobParameters jobParameters = new JobParametersBuilder()
 //                    .addString("executionTime", LocalDateTime.now().toString())
+//                    .addLong("run.id", System.currentTimeMillis())
 //                    .toJobParameters();
 //
 //            jobLauncher.run(tourismDataJob, jobParameters);
@@ -69,13 +86,20 @@ public class BatchScheduler {
 //        }
 //    }
 
-    @Scheduled(cron = "0 0 4,20 * * ?", zone = "Asia/Seoul") // 매일 새벽 4시
+    @Scheduled(cron = "0 0 4,20 * * ?", zone = "Asia/Seoul") // 매일 4시, 20시
     public void executeAllMigrationBatch() {
+        if (!jobExplorer.findRunningJobExecutions(allMigrationJob.getName()).isEmpty()) {
+            log.warn("Skip scheduling. Job '{}' is still running.", allMigrationJob.getName());
+            return;
+        }
+
         try {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("executionTime", LocalDateTime.now().toString())
+                    .addLong("run.id", System.currentTimeMillis())
                     .toJobParameters();
 
+            log.info("Launch '{}'", allMigrationJob.getName());
             jobLauncher.run(allMigrationJob, jobParameters);
             log.info("All migration batch job completed successfully");
         } catch (Exception e) {

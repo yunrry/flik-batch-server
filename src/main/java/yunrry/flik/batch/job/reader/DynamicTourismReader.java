@@ -47,14 +47,21 @@ public class DynamicTourismReader implements ItemReader<TourismRawData> {
         // 이전 호출 이력 조회하여 시작 페이지 설정
         ApiCallHistory history = tourismDataRepository.getLastApiCallHistory(contentTypeId, areaCode);
 
-        if (history != null) {
-            currentPage.set(history.getLastPageNo() + 1);
-        } else {
-            currentPage.set(1);  // 기록이 없는 경우 1페이지부터 시작
+        int currentSize;
+        try {
+            currentSize = Integer.parseInt(collectCount);
+        } catch (NumberFormatException e) {
+            currentSize = 100; // fallback
         }
 
-        log.info("DynamicTourismReader initialized - area: {}, type: {}, startPage: {}",
-                areaCode, contentTypeId, currentPage.get());
+        int nextPage = computeNextPage(history, currentSize);
+        currentPage.set(nextPage);
+
+        log.info("DynamicTourismReader initialized - area: {}, type: {}, last(page,size)=({},{}) -> startPage: {} (currentSize: {})",
+                areaCode, contentTypeId,
+                history != null ? history.getLastPageNo() : null,
+                history != null ? history.getPageSize() : null,
+                currentPage.get(), currentSize);
     }
 
     @Override
@@ -103,5 +110,15 @@ public class DynamicTourismReader implements ItemReader<TourismRawData> {
             currentBatch = null;
             throw e;
         }
+    }
+
+
+    private int computeNextPage(ApiCallHistory history, int currentPageSize) {
+        if (history == null) return 1;
+        if (currentPageSize <= 0) return Math.max(history.getLastPageNo() + 1, 1);
+
+        long consumed = (long) history.getLastPageNo() * (long) history.getPageSize(); // 누적 수집 개수
+        int next = (int) (consumed / currentPageSize) + 1; // floor(consumed/currentSize) + 1
+        return Math.max(next, 1);
     }
 }
