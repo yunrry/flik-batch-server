@@ -59,6 +59,7 @@ public class ShoppingMigrationService {
             SELECT * FROM fetched_shopping
             WHERE label_depth1 IS NOT NULL 
             AND label_depth1 != '' 
+            AND label_depth3 != '사후면세점'   
             AND addr1 IS NOT NULL 
             AND addr1 != '' 
             AND overview IS NOT NULL
