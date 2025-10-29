@@ -33,11 +33,13 @@ public class BatchScheduler {
     private final Job tourismDataJob;
     private final Job allMigrationJob;
     private final Job tourismDataCollectionJob;
+    private final Job spotImageBackfillJob;
 
     @Value("${tourism-api.service-key}")
     private String serviceKey;
 
-    @Scheduled(cron = "0 0 1,19 * * ?", zone = "Asia/Seoul") // 매일 1시, 19시
+    // 매 분기(1,4,7,10월) 1일 01시, 19시 실행
+    @Scheduled(cron = "0 0 1 1 1,4,7,10 ?", zone = "Asia/Seoul")
     public void executeTourismDataCollectionBatch() {
         // 겹침 방지: 이전 실행이 남아있으면 건너뜀
         if (!jobExplorer.findRunningJobExecutions(tourismDataCollectionJob.getName()).isEmpty()) {
@@ -71,22 +73,8 @@ public class BatchScheduler {
         }
     }
 
-//    @Scheduled(cron = "0 0 2 * * ?", zone = "Asia/Seoul")
-//    public void executeTourismDataBatch() {
-//        try {
-//            JobParameters jobParameters = new JobParametersBuilder()
-//                    .addString("executionTime", LocalDateTime.now().toString())
-//                    .addLong("run.id", System.currentTimeMillis())
-//                    .toJobParameters();
-//
-//            jobLauncher.run(tourismDataJob, jobParameters);
-//            log.info("Tourism data batch job completed successfully");
-//        } catch (Exception e) {
-//            log.error("Failed to execute tourism data batch job", e);
-//        }
-//    }
 
-    @Scheduled(cron = "0 0 4,20 * * ?", zone = "Asia/Seoul") // 매일 4시, 20시
+    @Scheduled(cron = "0 0 4 1 1,4,7,10 ?", zone = "Asia/Seoul")
     public void executeAllMigrationBatch() {
         if (!jobExplorer.findRunningJobExecutions(allMigrationJob.getName()).isEmpty()) {
             log.warn("Skip scheduling. Job '{}' is still running.", allMigrationJob.getName());
@@ -104,6 +92,27 @@ public class BatchScheduler {
             log.info("All migration batch job completed successfully");
         } catch (Exception e) {
             log.error("Failed to execute all migration batch job", e);
+        }
+    }
+
+    @Scheduled(cron = "0 0 5 1 1,4,7,10 ?", zone = "Asia/Seoul")
+    public void executeSpotImageBackfillBatch() {
+        if (!jobExplorer.findRunningJobExecutions(spotImageBackfillJob.getName()).isEmpty()) {
+            log.warn("Skip scheduling. Job '{}' is still running.", spotImageBackfillJob.getName());
+            return;
+        }
+
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("executionTime", LocalDateTime.now().toString())
+                    .addLong("run.id", System.currentTimeMillis())
+                    .toJobParameters();
+
+            log.info("Launch '{}'", spotImageBackfillJob.getName());
+            jobLauncher.run(spotImageBackfillJob, jobParameters);
+            log.info("Spot image backfill batch job completed successfully");
+        } catch (Exception e) {
+            log.error("Failed to execute spot image backfill batch job", e);
         }
     }
 }

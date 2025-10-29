@@ -2,18 +2,14 @@ package yunrry.flik.batch.repository.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import yunrry.flik.batch.domain.ApiCallHistory;
 import yunrry.flik.batch.domain.TourismRawData;
 import yunrry.flik.batch.repository.TourismDataRepository;
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

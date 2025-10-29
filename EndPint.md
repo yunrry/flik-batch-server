@@ -220,4 +220,6 @@ curl -X POST "http://localhost:8086/api/collect/tourism" \
 -d "contentTypeId=39" \
 -d "collectCount=10000"
 
-
+### 이미지
+curl -X POST 'http://localhost:8080/batch/spots/images' \
+-H 'Accept: application/json'
